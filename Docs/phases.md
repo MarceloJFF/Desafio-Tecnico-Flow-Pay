@@ -11,7 +11,7 @@ Divisão pensada para caber no prazo do desafio (48h), com cada fase gerando alg
 - Estrutura de pastas `backend/` (Spring Boot + Gradle/Maven) e `frontend/` (React + Vite).
 - `docker-compose.yml` com Postgres.
 - Backend sobe e conecta no Postgres (health check `GET /actuator/health`).
-- Frontend sobe e faz uma chamada de "hello world" no backend.
+- Crie um controller que retorne faz uma chamada de "hello world" no backend.
 - README inicial com instruções de `docker-compose up`.
 
 **Entregável:** `docker-compose up` sobe tudo, front conversa com back.
@@ -25,7 +25,6 @@ Divisão pensada para caber no prazo do desafio (48h), com cada fase gerando alg
 - Entidades JPA (`Atendente`, `Atendimento`, enums `TimeAtendimento`, `StatusAtendimento`) — ver `models.md`.
 - Migrations via Flyway/Liquibase.
 - Seed inicial de atendentes (ex: 2-3 por time) para facilitar testes manuais.
-- Testes de repositório (Testcontainers com Postgres real).
 
 **Entregável:** banco criado automaticamente ao subir o backend, com dados de teste.
 

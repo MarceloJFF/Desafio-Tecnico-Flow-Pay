@@ -17,8 +17,9 @@
 - The project targets Java 21 (`pom.xml`). Ensure `JAVA_HOME` points to a valid JDK before running Maven; without it the wrapper exits before tests run.
 
 ## Verified Tooling State
-- Backend is Spring Boot `4.1.0` with `spring-boot-starter-webmvc`, `spring-boot-starter-data-jpa`, Lombok, and Maven wrapper `3.3.4` downloading Maven `3.9.16`.
-- `src/main/resources/application.properties` only sets `spring.application.name=FlowPay`; no datasource, migrations, Docker Compose, lint, formatter, or CI workflow is currently configured.
+- Backend is Spring Boot `4.1.0` with `spring-boot-starter-webmvc`, `spring-boot-starter-data-jpa`, Flyway, PostgreSQL driver, Lombok, and Maven wrapper `3.3.4` downloading Maven `3.9.16`.
+- `src/main/resources/application.properties` points to local PostgreSQL database `flowpay` with `spring.jpa.hibernate.ddl-auto=validate`; Flyway migrations live under `src/main/resources/db/migration`.
+- No Docker Compose, lint, formatter, or CI workflow is currently configured.
 - No root README or existing agent instructions were present when this file was created.
 
 ## Product Constraints To Preserve
