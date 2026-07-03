@@ -8,7 +8,7 @@
 
 ## 1. Contexto e Problema
 
-A FlowPay precisa distribuir atendimentos de clientes entre 3 times (Cartões, Empréstimos, Outros Assuntos), respeitando:
+A FlowPay precisa distribuir atendimentos de clientes entre 3 times (Cartões, Empréstimos, Outros Assuntos), com assunto selecionado de uma lista pré-cadastrada, respeitando:
 
 1. Cada atendente atende no máximo **3 pessoas simultaneamente**.
 2. Se todos os atendentes de um time estiverem ocupados, o atendimento **entra em fila** e é distribuído automaticamente assim que um atendente ficar livre.

@@ -38,7 +38,7 @@ Divisão pensada para caber no prazo do desafio (48h), com cada fase gerando alg
 - `SELECT ... FOR UPDATE SKIP LOCKED` para busca de atendente disponível.
 - Finalização de atendimento + redistribuição automática da fila.
 - **Testes de concorrência**: N threads criando atendimentos simultaneamente, validando que nenhum atendente ultrapassa 3.
-- Testes unitários de classificação de assunto → time.
+- Assunto é entidade persistida (não há classificação por regex).
 
 **Entregável:** endpoints REST de criação/finalização funcionando, com testes cobrindo os cenários de `behavior.md`.
 

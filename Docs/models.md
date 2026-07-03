@@ -18,21 +18,13 @@ Time (1) ──< (N) Atendente (1) ──< (N) Atendimento >── (N) 1 Time
 
 ## 2. Backend — Entidades JPA (Spring Boot)
 
-### `TimeAtendimento` (enum ou entidade — recomendado enum fixo, já que os 3 times são conhecidos e fixos no domínio)
+### `TimeAtendimento` (enum fixo — os 3 times são conhecidos e fixos no domínio)
 
 ```java
 public enum TimeAtendimento {
     CARTOES,
     EMPRESTIMOS,
-    OUTROS;
-
-    public static TimeAtendimento fromAssunto(String assunto) {
-        if (assunto == null) return OUTROS;
-        String normalizado = assunto.trim().toLowerCase();
-        if (normalizado.contains("cart")) return CARTOES;
-        if (normalizado.contains("empréstimo") || normalizado.contains("emprestimo")) return EMPRESTIMOS;
-        return OUTROS;
-    }
+    OUTROS
 }
 ```
 
@@ -66,6 +58,30 @@ public class Atendente {
 }
 ```
 
+### `Assunto` (entidade persistida — 3 registros fixos no banco)
+
+```java
+@Entity
+@Table(name = "assuntos")
+public class Assunto {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.UUID)
+    private UUID id;
+
+    @Column(nullable = false)
+    private String nome;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private TimeAtendimento time;
+
+    // getters/setters
+}
+```
+
+> O assunto **não é mais classificado por regex**. Quem determina o `TimeAtendimento` é a entidade `Assunto` persistida no banco. O frontend lista os assuntos disponíveis via `GET /api/assuntos` para o usuário selecionar.
+
 ### `Atendimento`
 
 ```java
@@ -77,8 +93,12 @@ public class Atendimento {
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
-    @Column(nullable = false)
-    private String assunto;
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "assunto_id", nullable = false)
+    private Assunto assunto;
+
+    @Column(length = 500)
+    private String observacao; // texto livre opcional
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
@@ -151,12 +171,14 @@ public interface AtendimentoRepository extends JpaRepository<Atendimento, UUID> 
 ## 3. DTOs (contratos da API REST)
 
 ```java
-public record CriarAtendimentoRequest(String assunto) {}
+public record CriarAtendimentoRequest(UUID assuntoId, String observacao) {}
 
 public record AtendimentoResponse(
     UUID id,
-    String assunto,
+    UUID assuntoId,
+    String assuntoNome,
     TimeAtendimento time,
+    String observacao,
     StatusAtendimento status,
     UUID atendenteId,
     LocalDateTime criadoEm,
@@ -203,10 +225,18 @@ export type TimeAtendimento = "CARTOES" | "EMPRESTIMOS" | "OUTROS";
 
 export type StatusAtendimento = "AGUARDANDO" | "EM_ATENDIMENTO" | "FINALIZADO";
 
+export interface Assunto {
+  id: string;
+  nome: string;
+  time: TimeAtendimento;
+}
+
 export interface Atendimento {
   id: string;
-  assunto: string;
+  assuntoId: string;
+  assuntoNome: string;
   time: TimeAtendimento;
+  observacao?: string;
   status: StatusAtendimento;
   atendenteId?: string;
   criadoEm: string;
@@ -252,9 +282,16 @@ CREATE TABLE atendentes (
     CONSTRAINT chk_limite_atendimentos CHECK (atendimentos_ativos BETWEEN 0 AND 3)
 );
 
+CREATE TABLE assuntos (
+    id UUID PRIMARY KEY,
+    nome VARCHAR(255) NOT NULL,
+    time VARCHAR(20) NOT NULL
+);
+
 CREATE TABLE atendimentos (
     id UUID PRIMARY KEY,
-    assunto VARCHAR(255) NOT NULL,
+    assunto_id UUID NOT NULL REFERENCES assuntos(id),
+    observacao VARCHAR(500),
     time VARCHAR(20) NOT NULL,
     atendente_id UUID REFERENCES atendentes(id),
     status VARCHAR(20) NOT NULL,

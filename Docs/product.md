@@ -13,11 +13,12 @@ Sistema que recebe solicitações de atendimento, distribui automaticamente para
 ## Funcionalidades
 
 ### 1. Abertura de Atendimento
-- Cliente (ou sistema externo) cria um atendimento informando o assunto.
-- O sistema identifica automaticamente o time responsável:
+- Cliente (ou sistema externo) cria um atendimento informando o **assunto** (selecionado de uma lista pré-cadastrada) e, opcionalmente, uma **observação**.
+- O sistema identifica o time responsável a partir do assunto cadastrado:
   - "Problemas com cartão" → **Time Cartões**
   - "Contratação de empréstimo" → **Time Empréstimos**
-  - Qualquer outro assunto → **Time Outros Assuntos**
+  - "Outros" → **Time Outros Assuntos**
+- Assuntos são cadastrados no banco (seed), sem necessidade de classificação por texto/regex.
 
 ### 2. Distribuição Automática
 - O sistema tenta atribuir o atendimento a um atendente disponível do time correspondente.

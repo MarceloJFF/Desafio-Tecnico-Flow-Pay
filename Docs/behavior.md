@@ -4,24 +4,26 @@ Este documento descreve o comportamento esperado do sistema em cada cenário, in
 
 ---
 
-## 1. Classificação de Assunto → Time
+## 1. Seleção de Assunto → Time
 
-| Assunto recebido | Time destino |
+O assunto é uma **entidade persistida** (`assuntos`), consultável via `GET /api/assuntos`. O frontend exibe os assuntos cadastrados para o usuário selecionar.
+
+| Assunto (id fixo no seed) | Time destino |
 |---|---|
-| "Problemas com cartão" (case-insensitive, match exato ou normalizado) | Time Cartões |
-| "Contratação de empréstimo" | Time Empréstimos |
-| Qualquer outro valor, incluindo vazio/desconhecido | Time Outros Assuntos |
+| `a0000000-...-001` — "Problemas com cartão" | Time Cartões |
+| `a0000000-...-002` — "Contratação de empréstimo" | Time Empréstimos |
+| `a0000000-...-003` — "Outros" | Time Outros Assuntos |
 
-**Comportamento esperado:** a classificação nunca falha — todo assunto não mapeado explicitamente cai em "Outros Assuntos". Não deve haver erro 400 por assunto desconhecido.
+**Comportamento esperado:** não há classificação por texto/regex. O `assuntoId` informado deve existir na tabela `assuntos`; caso contrário, retorna `400 Bad Request`. Assuntos novos podem ser inseridos via migration sem necessidade de alterar código.
 
 ---
 
 ## 2. Criação de Atendimento
 
-**Entrada:** `POST /api/atendimentos { "assunto": "Problemas com cartão" }`
+**Entrada:** `POST /api/atendimentos { "assuntoId": "a0000000-0000-0000-0000-000000000001", "observacao": "Cliente relatou..." }`
 
 **Fluxo:**
-1. Sistema classifica o time.
+1. Sistema identifica o time a partir do assunto cadastrado.
 2. Sistema persiste o atendimento com `status = AGUARDANDO`.
 3. Dentro da mesma transação, tenta atribuir a um atendente do time com `atendimentosAtivos < 3`, priorizando o atendente com **menor carga atual** (balanceamento).
 4. Se atribuído: `status = EM_ATENDIMENTO`, `atendenteId` preenchido, `atribuidoEm = now()`, `atendimentosAtivos` do atendente é incrementado.
@@ -88,7 +90,8 @@ Este documento descreve o comportamento esperado do sistema em cada cenário, in
 
 | Cenário | Resposta esperada |
 |---|---|
-| Criar atendimento sem campo `assunto` | `400 Bad Request` |
+| Criar atendimento sem campo `assuntoId` | `400 Bad Request` |
+| Criar atendimento com `assuntoId` inexistente | `400 Bad Request` |
 | Finalizar atendimento inexistente | `404 Not Found` |
 | Finalizar atendimento já finalizado | `409 Conflict` |
 | Time sem nenhum atendente cadastrado | Atendimento permanece em fila indefinidamente (não é erro) |

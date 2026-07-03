@@ -30,8 +30,12 @@ public class Atendimento {
 	@GeneratedValue(strategy = GenerationType.UUID)
 	private UUID id;
 
-	@Column(nullable = false)
-	private String assunto;
+	@ManyToOne(fetch = FetchType.EAGER)
+	@JoinColumn(name = "assunto_id", nullable = false)
+	private Assunto assunto;
+
+	@Column(length = 500)
+	private String observacao;
 
 	@Enumerated(EnumType.STRING)
 	@Column(nullable = false, length = 20)
