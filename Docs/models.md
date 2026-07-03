@@ -186,6 +186,12 @@ public record AtendimentoResponse(
     LocalDateTime finalizadoEm
 ) {}
 
+public record AssuntoResponse(
+    UUID id,
+    String nome,
+    TimeAtendimento time
+) {}
+
 public record DashboardResumoResponse(
     Map<TimeAtendimento, Integer> emFilaPorTime,
     Map<TimeAtendimento, Integer> emAtendimentoPorTime,
@@ -215,6 +221,23 @@ public record DashboardEvent(
     LocalDateTime timestamp
 ) {}
 ```
+
+### Eventos RabbitMQ (distribuição)
+
+```java
+public enum TipoDistribuicaoEvento {
+    ATENDIMENTO_CRIADO,
+    VAGA_LIBERADA
+}
+
+public record DistribuicaoEvento(
+    UUID atendimentoId,
+    TimeAtendimento time,
+    TipoDistribuicaoEvento tipo
+) implements Serializable {}
+```
+
+RabbitMQ é usado como gatilho. A fila real de espera continua no banco por `status = AGUARDANDO`.
 
 ---
 

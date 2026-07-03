@@ -16,6 +16,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.desafio.FlowPay.dto.in.CriarAtendimentoRequest;
 import com.desafio.FlowPay.model.Atendente;
@@ -24,28 +25,29 @@ import com.desafio.FlowPay.model.StatusAtendimento;
 import com.desafio.FlowPay.model.TimeAtendimento;
 import com.desafio.FlowPay.repository.AtendenteRepository;
 import com.desafio.FlowPay.repository.AtendimentoRepository;
-import com.desafio.FlowPay.repository.AssuntoRepository;
 
 @SpringBootTest
 class DistribuicaoServiceIntegrationTest {
 
 	private static final UUID ASSUNTO_CARTOES_ID = UUID.fromString("a0000000-0000-0000-0000-000000000001");
+	private static final UUID ASSUNTO_EMPRESTIMOS_ID = UUID.fromString("a0000000-0000-0000-0000-000000000002");
+	private static final UUID ASSUNTO_OUTROS_ID = UUID.fromString("a0000000-0000-0000-0000-000000000003");
 
 	private final DistribuicaoService distribuicaoService;
+	private final DistribuicaoProcessor distribuicaoProcessor;
 	private final AtendimentoRepository atendimentoRepository;
 	private final AtendenteRepository atendenteRepository;
-	private final AssuntoRepository assuntoRepository;
 
 	@Autowired
 	DistribuicaoServiceIntegrationTest(
 			DistribuicaoService distribuicaoService,
+			DistribuicaoProcessor distribuicaoProcessor,
 			AtendimentoRepository atendimentoRepository,
-			AtendenteRepository atendenteRepository,
-			AssuntoRepository assuntoRepository) {
+			AtendenteRepository atendenteRepository) {
 		this.distribuicaoService = distribuicaoService;
+		this.distribuicaoProcessor = distribuicaoProcessor;
 		this.atendimentoRepository = atendimentoRepository;
 		this.atendenteRepository = atendenteRepository;
-		this.assuntoRepository = assuntoRepository;
 	}
 
 	@BeforeEach
@@ -55,23 +57,33 @@ class DistribuicaoServiceIntegrationTest {
 	}
 
 	@Test
-	void criarAtendimentoAtribuiParaAtendenteDisponivel() {
-		Atendimento atendimento = distribuicaoService.criar(new CriarAtendimentoRequest(ASSUNTO_CARTOES_ID, null));
+	void criarAtendimentoMantemAguardandoAteWorkerProcessar() {
+		Atendimento criado = distribuicaoService.criar(new CriarAtendimentoRequest(ASSUNTO_CARTOES_ID, null));
 
-		assertThat(atendimento.getTime()).isEqualTo(TimeAtendimento.CARTOES);
-		assertThat(atendimento.getStatus()).isEqualTo(StatusAtendimento.EM_ATENDIMENTO);
-		assertThat(atendimento.getAtendente()).isNotNull();
-		assertThat(atendimento.getAtribuidoEm()).isNotNull();
-		assertThat(atendimento.getObservacao()).isNull();
-		assertThat(atendimento.getAssunto().getId()).isEqualTo(ASSUNTO_CARTOES_ID);
+		assertThat(criado.getTime()).isEqualTo(TimeAtendimento.CARTOES);
+		assertThat(criado.getStatus()).isEqualTo(StatusAtendimento.AGUARDANDO);
+		assertThat(criado.getAtendente()).isNull();
+		assertThat(criado.getObservacao()).isNull();
+		assertThat(criado.getAssunto().getId()).isEqualTo(ASSUNTO_CARTOES_ID);
+
+		assertThat(distribuicaoProcessor.tentarAtribuirProximo(TimeAtendimento.CARTOES)).isTrue();
+
+		Atendimento atribuido = atendimentoRepository.findById(criado.getId()).orElseThrow();
+		assertThat(atribuido.getStatus()).isEqualTo(StatusAtendimento.EM_ATENDIMENTO);
+		assertThat(atribuido.getAtendente()).isNotNull();
+		assertThat(atribuido.getAtribuidoEm()).isNotNull();
 		assertThat(atendimentoRepository.countByStatusAndTime(StatusAtendimento.EM_ATENDIMENTO, TimeAtendimento.CARTOES))
 				.isEqualTo(1);
 	}
 
 	@Test
-	void criarAtendimentoMantemFilaQuandoTimeEstaLotado() {
+	void workerMantemFilaQuandoTimeEstaLotado() {
 		for (int i = 0; i < 10; i++) {
 			distribuicaoService.criar(new CriarAtendimentoRequest(ASSUNTO_CARTOES_ID, null));
+		}
+
+		for (int i = 0; i < 10; i++) {
+			distribuicaoProcessor.tentarAtribuirProximo(TimeAtendimento.CARTOES);
 		}
 
 		assertThat(atendimentoRepository.countByStatusAndTime(StatusAtendimento.EM_ATENDIMENTO, TimeAtendimento.CARTOES))
@@ -84,9 +96,13 @@ class DistribuicaoServiceIntegrationTest {
 	}
 
 	@Test
-	void finalizarAtendimentoPuxaProximoDaFilaDoMesmoTime() {
+	void finalizarAtendimentoLiberaVagaEWorkerPuxaProximoDaFilaDoMesmoTime() {
 		for (int i = 0; i < 10; i++) {
 			distribuicaoService.criar(new CriarAtendimentoRequest(ASSUNTO_CARTOES_ID, null));
+		}
+
+		for (int i = 0; i < 10; i++) {
+			distribuicaoProcessor.tentarAtribuirProximo(TimeAtendimento.CARTOES);
 		}
 
 		Atendimento emAtendimento = atendimentoRepository
@@ -95,16 +111,20 @@ class DistribuicaoServiceIntegrationTest {
 		Atendimento aguardando = atendimentoRepository
 				.findByStatusAndTimeOrderByCriadoEmAsc(StatusAtendimento.AGUARDANDO, TimeAtendimento.CARTOES)
 				.getFirst();
-		UUID atendenteLiberadoId = emAtendimento.getAtendente().getId();
 		UUID aguardandoId = aguardando.getId();
 
 		Atendimento finalizado = distribuicaoService.finalizar(emAtendimento.getId());
 
-		Atendimento reatribuido = atendimentoRepository.findById(aguardandoId).orElseThrow();
 		assertThat(finalizado.getStatus()).isEqualTo(StatusAtendimento.FINALIZADO);
 		assertThat(finalizado.getFinalizadoEm()).isNotNull();
+		assertThat(atendimentoRepository.findById(aguardandoId).orElseThrow().getStatus())
+				.isEqualTo(StatusAtendimento.AGUARDANDO);
+
+		assertThat(distribuicaoProcessor.tentarAtribuirProximo(TimeAtendimento.CARTOES)).isTrue();
+
+		Atendimento reatribuido = atendimentoRepository.findById(aguardandoId).orElseThrow();
 		assertThat(reatribuido.getStatus()).isEqualTo(StatusAtendimento.EM_ATENDIMENTO);
-		assertThat(reatribuido.getAtendente().getId()).isEqualTo(atendenteLiberadoId);
+		assertThat(reatribuido.getAtendente()).isNotNull();
 		assertThat(atendimentoRepository.countByStatusAndTime(StatusAtendimento.AGUARDANDO, TimeAtendimento.CARTOES))
 				.isZero();
 	}
@@ -118,6 +138,7 @@ class DistribuicaoServiceIntegrationTest {
 	@Test
 	void finalizarAtendimentoJaFinalizadoRetornaConflito() {
 		Atendimento atendimento = distribuicaoService.criar(new CriarAtendimentoRequest(ASSUNTO_CARTOES_ID, null));
+		distribuicaoProcessor.tentarAtribuirProximo(TimeAtendimento.CARTOES);
 		distribuicaoService.finalizar(atendimento.getId());
 
 		assertThatThrownBy(() -> distribuicaoService.finalizar(atendimento.getId()))
@@ -125,7 +146,7 @@ class DistribuicaoServiceIntegrationTest {
 	}
 
 	@Test
-	void criacoesConcorrentesNaoUltrapassamLimiteDeTresPorAtendente() throws Exception {
+	void workersConcorrentesNaoUltrapassamLimiteDeTresPorAtendente() throws Exception {
 		int totalAtendimentos = 30;
 		int totalThreads = 12;
 		ExecutorService executor = Executors.newFixedThreadPool(totalThreads);
@@ -133,9 +154,13 @@ class DistribuicaoServiceIntegrationTest {
 		List<Future<?>> futures = new ArrayList<>();
 
 		for (int i = 0; i < totalAtendimentos; i++) {
+			distribuicaoService.criar(new CriarAtendimentoRequest(ASSUNTO_CARTOES_ID, null));
+		}
+
+		for (int i = 0; i < totalAtendimentos; i++) {
 			futures.add(executor.submit(() -> {
 				start.await(10, TimeUnit.SECONDS);
-				distribuicaoService.criar(new CriarAtendimentoRequest(ASSUNTO_CARTOES_ID, null));
+				distribuicaoProcessor.tentarAtribuirProximo(TimeAtendimento.CARTOES);
 				return null;
 			}));
 		}
@@ -160,5 +185,36 @@ class DistribuicaoServiceIntegrationTest {
 		assertThat(atendimentoRepository.countByStatusAndTime(StatusAtendimento.AGUARDANDO, TimeAtendimento.CARTOES))
 				.isEqualTo(totalAtendimentos - 9);
 		assertThat(ativosDosAtendentes).isEqualTo(9);
+	}
+
+	@Test
+	@Transactional
+	void workersProcessamTimesAlternadosSemMisturarFilas() {
+		for (int i = 0; i < 10; i++) {
+			distribuicaoService.criar(new CriarAtendimentoRequest(ASSUNTO_CARTOES_ID, null));
+			distribuicaoService.criar(new CriarAtendimentoRequest(ASSUNTO_EMPRESTIMOS_ID, null));
+			distribuicaoService.criar(new CriarAtendimentoRequest(ASSUNTO_OUTROS_ID, null));
+		}
+
+		for (int i = 0; i < 10; i++) {
+			distribuicaoProcessor.tentarAtribuirProximo(TimeAtendimento.CARTOES);
+			distribuicaoProcessor.tentarAtribuirProximo(TimeAtendimento.EMPRESTIMOS);
+			distribuicaoProcessor.tentarAtribuirProximo(TimeAtendimento.OUTROS);
+		}
+
+		assertThat(atendimentoRepository.countByStatusAndTime(StatusAtendimento.EM_ATENDIMENTO, TimeAtendimento.CARTOES))
+				.isEqualTo(9);
+		assertThat(atendimentoRepository.countByStatusAndTime(StatusAtendimento.EM_ATENDIMENTO, TimeAtendimento.EMPRESTIMOS))
+				.isEqualTo(9);
+		assertThat(atendimentoRepository.countByStatusAndTime(StatusAtendimento.EM_ATENDIMENTO, TimeAtendimento.OUTROS))
+				.isEqualTo(9);
+		assertThat(atendimentoRepository.countByStatusAndTime(StatusAtendimento.AGUARDANDO, TimeAtendimento.CARTOES))
+				.isEqualTo(1);
+		assertThat(atendimentoRepository.countByStatusAndTime(StatusAtendimento.AGUARDANDO, TimeAtendimento.EMPRESTIMOS))
+				.isEqualTo(1);
+		assertThat(atendimentoRepository.countByStatusAndTime(StatusAtendimento.AGUARDANDO, TimeAtendimento.OUTROS))
+				.isEqualTo(1);
+		assertThat(atendimentoRepository.findByStatus(StatusAtendimento.EM_ATENDIMENTO))
+				.allSatisfy(atendimento -> assertThat(atendimento.getAtendente().getTime()).isEqualTo(atendimento.getTime()));
 	}
 }

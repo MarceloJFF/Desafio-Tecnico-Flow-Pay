@@ -44,6 +44,8 @@ frontend/src/
 3. Cada evento recebido atualiza o estado local (merge incremental, não re-fetch completo).
 4. Se a conexão SSE cair e reconectar, dispara novo snapshot REST para resincronizar (ver `behavior.md`, seção 7).
 
+O backend processa distribuição de forma assíncrona via RabbitMQ. Portanto, um atendimento recém-criado pode aparecer brevemente como `AGUARDANDO` antes do worker atribuir para um atendente.
+
 **Estado local:**
 ```typescript
 {

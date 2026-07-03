@@ -7,6 +7,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.desafio.FlowPay.dto.in.CriarAtendimentoRequest;
+import com.desafio.FlowPay.messaging.DistribuicaoEventPublisher;
 import com.desafio.FlowPay.model.Assunto;
 import com.desafio.FlowPay.model.Atendente;
 import com.desafio.FlowPay.model.Atendimento;
@@ -22,12 +23,14 @@ public class DistribuicaoService {
 	private final AtendimentoRepository atendimentoRepository;
 	private final AtendenteRepository atendenteRepository;
 	private final AssuntoRepository assuntoRepository;
+	private final DistribuicaoEventPublisher distribuicaoEventPublisher;
 
 	public DistribuicaoService(AtendimentoRepository atendimentoRepository, AtendenteRepository atendenteRepository,
-			AssuntoRepository assuntoRepository) {
+			AssuntoRepository assuntoRepository, DistribuicaoEventPublisher distribuicaoEventPublisher) {
 		this.atendimentoRepository = atendimentoRepository;
 		this.atendenteRepository = atendenteRepository;
 		this.assuntoRepository = assuntoRepository;
+		this.distribuicaoEventPublisher = distribuicaoEventPublisher;
 	}
 
 	@Transactional
@@ -47,7 +50,7 @@ public class DistribuicaoService {
 		atendimento.setStatus(StatusAtendimento.AGUARDANDO);
 
 		Atendimento salvo = atendimentoRepository.saveAndFlush(atendimento);
-		preencherVagasDoTime(time);
+		distribuicaoEventPublisher.atendimentoCriado(salvo.getId(), time);
 		return atendimentoRepository.findById(salvo.getId()).orElseThrow();
 	}
 
@@ -71,41 +74,7 @@ public class DistribuicaoService {
 		atendimento.setFinalizadoEm(LocalDateTime.now());
 		atendente.setAtendimentosAtivos(Math.max(0, atendente.getAtendimentosAtivos() - 1));
 
-		atribuirProximoDaFilaAoAtendente(atendimento.getTime(), atendente);
+		distribuicaoEventPublisher.vagaLiberada(atendimento.getTime());
 		return atendimento;
-	}
-
-	private void preencherVagasDoTime(TimeAtendimento time) {
-		atendenteRepository.bloquearDistribuicaoDoTime(time.name());
-
-		while (true) {
-			Atendente atendente = atendenteRepository.buscarDisponivel(time.name()).orElse(null);
-			if (atendente == null) {
-				return;
-			}
-
-			Atendimento proximo = atendimentoRepository.buscarProximoDaFila(time.name()).orElse(null);
-			if (proximo == null) {
-				return;
-			}
-
-			atribuir(proximo, atendente);
-		}
-	}
-
-	private void atribuirProximoDaFilaAoAtendente(TimeAtendimento time, Atendente atendente) {
-		atendenteRepository.bloquearDistribuicaoDoTime(time.name());
-
-		Atendimento proximo = atendimentoRepository.buscarProximoDaFila(time.name()).orElse(null);
-		if (proximo != null && atendente.getAtendimentosAtivos() < 3) {
-			atribuir(proximo, atendente);
-		}
-	}
-
-	private void atribuir(Atendimento atendimento, Atendente atendente) {
-		atendimento.setAtendente(atendente);
-		atendimento.setStatus(StatusAtendimento.EM_ATENDIMENTO);
-		atendimento.setAtribuidoEm(LocalDateTime.now());
-		atendente.setAtendimentosAtivos(atendente.getAtendimentosAtivos() + 1);
 	}
 }

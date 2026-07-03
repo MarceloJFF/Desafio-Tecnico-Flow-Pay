@@ -1,7 +1,7 @@
 # PRD — Software de Distribuição e Monitoramento de Atendimentos (FlowPay)
 
 **Versão:** 2.0
-**Stack:** Monorepo — React (front) + Spring Boot (back) + Postgres + SSE
+**Stack:** Monorepo — React (front) + Spring Boot (back) + Postgres + RabbitMQ + SSE
 **Autor:** Marcelo (desafio técnico Pleno Full Stack)
 
 ---
@@ -32,7 +32,7 @@ Entregar uma solução correta, testável e com boa experiência de monitorament
 
 ### Dentro do escopo
 - API REST (Spring Boot) para criar atendimentos, finalizar atendimentos, listar filas e atendentes.
-- Motor de distribuição automática com fila modelada em banco relacional.
+- Motor de distribuição automática com fila modelada em banco relacional e RabbitMQ como gatilho assíncrono.
 - Endpoint SSE (`/dashboard/stream`) que emite eventos em tempo real.
 - Dashboard React consumindo o stream SSE, mostrando: fila por time, ocupação dos atendentes, atendimentos em andamento, métricas agregadas.
 - Testes automatizados cobrindo a regra de negócio (limite de 3, fila, concorrência).
@@ -64,7 +64,7 @@ flowpay/
 │   │   ├── hooks/             # useSSE, useDashboard
 │   │   └── services/          # api.ts
 │   └── ...
-├── docker-compose.yml          # postgres + backend + frontend
+├── docker-compose.yml          # postgres + rabbitmq + backend + frontend
 └── docs/                       # este conjunto de arquivos .md
 ```
 
@@ -74,7 +74,9 @@ flowpay/
 
 ## 5. Decisão Arquitetural — Backend de Distribuição
 
-Fonte única de verdade: **Postgres**. A fila é uma consulta lógica (`status = 'AGUARDANDO'`), não uma estrutura separada. Atribuição feita dentro de transação com `SELECT ... FOR UPDATE SKIP LOCKED`, evitando dois atendimentos concorrentes estourarem o limite de 3 sem precisar de broker externo (RabbitMQ) ou cache (Redis) nesta fase.
+Fonte única de verdade: **Postgres**. A fila é uma consulta lógica (`status = 'AGUARDANDO'`), não uma estrutura separada no broker. RabbitMQ funciona como gatilho assíncrono para o worker tentar atribuir o próximo atendimento do time. A atribuição é feita dentro de transação com `SELECT ... FOR UPDATE SKIP LOCKED`, evitando dois workers concorrentes estourarem o limite de 3.
+
+O scheduler de segurança reprocessa periodicamente os times para cobrir mensagens perdidas, restart do worker ou indisponibilidade temporária do RabbitMQ. Ele não substitui o RabbitMQ; apenas garante consistência eventual pelo estado do banco.
 
 ---
 
@@ -111,6 +113,8 @@ Ver `phases.md` para o detalhamento com entregáveis por fase.
 
 - [ ] Nenhum atendente recebe mais de 3 atendimentos simultâneos, mesmo sob concorrência.
 - [ ] Atendimento sem atendente disponível entra em fila e é atribuído automaticamente ao liberar vaga.
+- [ ] Worker RabbitMQ processa criação e liberação de vaga sem atribuição duplicada.
+- [ ] Scheduler reprocessa filas pendentes mesmo se uma mensagem for perdida.
 - [ ] Dashboard reflete mudanças de estado via SSE, sem polling e sem F5 manual.
 - [ ] API documentada (OpenAPI/Swagger).
 - [ ] Testes cobrindo a regra de negócio, incluindo cenário de concorrência.

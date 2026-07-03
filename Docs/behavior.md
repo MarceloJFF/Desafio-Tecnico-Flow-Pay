@@ -25,26 +25,27 @@ O assunto é uma **entidade persistida** (`assuntos`), consultável via `GET /ap
 **Fluxo:**
 1. Sistema identifica o time a partir do assunto cadastrado.
 2. Sistema persiste o atendimento com `status = AGUARDANDO`.
-3. Dentro da mesma transação, tenta atribuir a um atendente do time com `atendimentosAtivos < 3`, priorizando o atendente com **menor carga atual** (balanceamento).
-4. Se atribuído: `status = EM_ATENDIMENTO`, `atendenteId` preenchido, `atribuidoEm = now()`, `atendimentosAtivos` do atendente é incrementado.
-5. Se não atribuído: atendimento permanece `AGUARDANDO` — está na fila.
-6. Evento é publicado para o stream SSE em ambos os casos (mudança de estado do dashboard).
+3. Após commit, publica uma mensagem `ATENDIMENTO_CRIADO` no RabbitMQ com `atendimentoId` e `time`.
+4. O worker consome a mensagem e tenta atribuir o próximo atendimento `AGUARDANDO` daquele time.
+5. Se houver atendente disponível: `status = EM_ATENDIMENTO`, `atendenteId` preenchido, `atribuidoEm = now()`, `atendimentosAtivos` incrementado.
+6. Se não houver atendente disponível: atendimento permanece `AGUARDANDO` no banco, que é a fila real do sistema.
 
-**Resposta:** `201 Created` com o atendimento (já indicando se foi atribuído ou está em fila).
+**Resposta:** `201 Created` com o atendimento recém-criado em `AGUARDANDO`. A atribuição é eventual, feita pelo worker ou pelo scheduler de segurança.
 
 ---
 
 ## 3. Regra do Limite de 3 Atendimentos Simultâneos
 
 - Um atendente nunca pode ter `atendimentosAtivos > 3`.
-- A verificação e o incremento acontecem na **mesma transação** (`SELECT ... FOR UPDATE SKIP LOCKED` + `UPDATE`), evitando que duas requisições concorrentes atribuam o mesmo atendente além do limite.
-- **Caso de borda:** duas requisições de criação de atendimento chegam no mesmo milissegundo para o mesmo time com apenas 1 vaga livre no time inteiro → apenas uma delas deve conseguir a vaga; a outra entra em fila. Isso deve ser coberto por teste de concorrência (N threads disparando criação simultânea).
+- A verificação e o incremento acontecem na **mesma transação do worker** (`SELECT ... FOR UPDATE SKIP LOCKED` + `UPDATE`), evitando que dois workers concorrentes atribuam o mesmo atendente além do limite.
+- **Caso de borda:** múltiplos workers processam mensagens do mesmo time com apenas 1 vaga livre no time inteiro → apenas um deve conseguir a vaga; os demais não atribuem nada e os atendimentos excedentes permanecem `AGUARDANDO`.
 
 ---
 
 ## 4. Fila de Espera
 
-- A fila **não é uma estrutura separada** — é a consulta `atendimentos WHERE status = 'AGUARDANDO' AND timeId = ? ORDER BY criadoEm ASC`.
+- A fila **não é uma estrutura separada no RabbitMQ** — é a consulta `atendimentos WHERE status = 'AGUARDANDO' AND time = ? ORDER BY criadoEm ASC`.
+- RabbitMQ é usado como gatilho de processamento, não como fonte da verdade da fila.
 - Ordem de atendimento: estritamente FIFO por time (quem chegou primeiro é atribuído primeiro quando surge vaga).
 - **Caso de borda:** se um time nunca tiver nenhum atendente cadastrado, atendimentos desse time ficam indefinidamente em `AGUARDANDO`. Sistema não deve travar nem lançar erro — apenas o item nunca sai da fila (comportamento esperado e documentado como risco operacional, não como bug).
 
@@ -58,18 +59,20 @@ O assunto é uma **entidade persistida** (`assuntos`), consultável via `GET /ap
 1. Valida que o atendimento existe e está `EM_ATENDIMENTO` (se já `FINALIZADO`, retorna 409 Conflict — não é idempotente por reenvio acidental).
 2. Marca `status = FINALIZADO`, `finalizadoEm = now()`.
 3. Decrementa `atendimentosAtivos` do atendente.
-4. **Na mesma transação**, tenta buscar o próximo `AGUARDANDO` do mesmo time (mais antigo primeiro) e atribui a esse atendente que acabou de liberar vaga.
-5. Publica evento(s) SSE: finalização do atendimento anterior e, se houve, nova atribuição.
+4. Após commit, publica uma mensagem `VAGA_LIBERADA` no RabbitMQ com o `time`.
+5. O worker consome a mensagem e tenta puxar o próximo `AGUARDANDO` do mesmo time.
 
-**Caso de borda:** se não houver ninguém na fila do time no momento da liberação, o atendente simplesmente fica com `atendimentosAtivos` reduzido e disponível — nenhuma ação adicional.
+**Caso de borda:** se não houver ninguém na fila do time no momento da tentativa, o atendente simplesmente fica disponível — nenhuma ação adicional é necessária.
 
 ---
 
-## 6. Redistribuição ao Liberar Vaga
+## 6. Worker, RabbitMQ e Scheduler
 
-- Disparada exclusivamente pelo evento de finalização (não há job/cron de varredura periódica nesta versão).
-- **Importante:** a redistribuição busca apenas o próximo item do mesmo time do atendente que liberou — atendentes não atendem fora do seu time.
-- Se múltiplos atendentes do mesmo time finalizam ao mesmo tempo e há múltiplos itens na fila, cada finalização, isoladamente, deve puxar exatamente um item — sem duplicar atribuição do mesmo atendimento a dois atendentes (garantido pelo `FOR UPDATE SKIP LOCKED` na busca do próximo item da fila).
+- Mensagens RabbitMQ suportadas: `ATENDIMENTO_CRIADO` e `VAGA_LIBERADA`.
+- Cada mensagem dispara uma única tentativa de atribuir o próximo `AGUARDANDO` do time informado.
+- Se a tentativa não encontrar atendente disponível, a mensagem é considerada processada e o atendimento continua `AGUARDANDO` no banco.
+- O scheduler roda periodicamente e tenta processar um item por time, cobrindo mensagem perdida, restart do worker ou indisponibilidade temporária do RabbitMQ.
+- Se múltiplos workers processam ao mesmo tempo e há múltiplos itens na fila, cada tentativa puxa no máximo um item, sem duplicar atribuição do mesmo atendimento.
 
 ---
 
@@ -95,6 +98,7 @@ O assunto é uma **entidade persistida** (`assuntos`), consultável via `GET /ap
 | Finalizar atendimento inexistente | `404 Not Found` |
 | Finalizar atendimento já finalizado | `409 Conflict` |
 | Time sem nenhum atendente cadastrado | Atendimento permanece em fila indefinidamente (não é erro) |
+| RabbitMQ indisponível após criação | Scheduler reprocessa filas pelo banco quando a aplicação estiver ativa |
 | Falha de conexão SSE | Reconexão automática do browser + snapshot via REST ao reconectar |
 
 ---

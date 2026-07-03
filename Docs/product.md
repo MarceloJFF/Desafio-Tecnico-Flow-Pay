@@ -21,17 +21,20 @@ Sistema que recebe solicitações de atendimento, distribui automaticamente para
 - Assuntos são cadastrados no banco (seed), sem necessidade de classificação por texto/regex.
 
 ### 2. Distribuição Automática
-- O sistema tenta atribuir o atendimento a um atendente disponível do time correspondente.
+- O sistema cria o atendimento em fila e publica um evento RabbitMQ para processamento assíncrono.
+- O worker tenta atribuir o atendimento a um atendente disponível do time correspondente.
 - Um atendente é considerado disponível se tiver **menos de 3 atendimentos ativos**.
 - Se nenhum atendente estiver disponível, o atendimento entra automaticamente em **fila de espera** do time.
 
 ### 3. Fila de Espera Inteligente
 - Atendimentos em fila são atendidos em ordem de chegada (FIFO) por time.
 - Assim que um atendente finaliza um atendimento e libera vaga, o próximo da fila do mesmo time é atribuído automaticamente — sem intervenção manual.
+- Um scheduler de segurança reprocessa filas periodicamente para cobrir mensagens perdidas ou restart do worker.
 
 ### 4. Finalização de Atendimento
 - Atendente (ou sistema) marca um atendimento como finalizado.
 - Isso libera a vaga do atendente e dispara a tentativa de puxar o próximo da fila.
+- Essa tentativa acontece via mensagem `VAGA_LIBERADA` consumida pelo worker.
 
 ### 5. Dashboard de Monitoramento (Tempo Real)
 - Tela única para gestores acompanharem, **atualizada automaticamente via SSE**:

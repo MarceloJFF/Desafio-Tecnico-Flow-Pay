@@ -35,9 +35,12 @@ Divisão pensada para caber no prazo do desafio (48h), com cada fase gerando alg
 **Objetivo:** a regra de negócio funcionando e testada — é a parte que mais pesa na avaliação.
 
 - `DistribuicaoService`: lógica de criação de atendimento + atribuição automática.
+- RabbitMQ como gatilho assíncrono de distribuição (`ATENDIMENTO_CRIADO`, `VAGA_LIBERADA`).
+- Worker que processa uma tentativa de atribuição por mensagem.
+- Scheduler de segurança para reprocessar filas por time.
 - `SELECT ... FOR UPDATE SKIP LOCKED` para busca de atendente disponível.
 - Finalização de atendimento + redistribuição automática da fila.
-- **Testes de concorrência**: N threads criando atendimentos simultaneamente, validando que nenhum atendente ultrapassa 3.
+- **Testes de concorrência**: N workers processando simultaneamente, validando que nenhum atendente ultrapassa 3.
 - Assunto é entidade persistida (não há classificação por regex).
 
 **Entregável:** endpoints REST de criação/finalização funcionando, com testes cobrindo os cenários de `behavior.md`.
