@@ -1,12 +1,12 @@
 # FlowPay
 
-Sistema de distribuicao e monitoramento de atendimentos para o desafio tecnico FlowPay.
+Sistema de distribuicao e monitoramento de atendimentos.
 
 ## Stack
 
-- Backend: Java 21, Spring Boot, Spring MVC, Spring Data JPA, Flyway, PostgreSQL, RabbitMQ, SSE, Swagger/OpenAPI.
-- Frontend: React, TypeScript, Vite, SSE via `EventSource`.
-- Infra local: Docker Compose com PostgreSQL e RabbitMQ Management.
+- Backend: Java 21, Spring Boot, Spring MVC, Spring Data JPA, Flyway, PostgreSQL, RabbitMQ (CloudAMQP), SSE, Swagger/OpenAPI.
+- Frontend: React, TypeScript, Vite, SSE.
+- Infra local: Docker Compose com PostgreSQL (RabbitMQ opcional via CloudAMQP).
 
 ## Funcionalidades
 
@@ -20,77 +20,37 @@ Sistema de distribuicao e monitoramento de atendimentos para o desafio tecnico F
 - Tela de atendimentos com filtros, detalhes em modal e finalizacao.
 - Tela de atendentes agrupados por squad.
 
-## Deploy Recomendado
-
-### Backend no Render
-
-Arquivos preparados:
-
-- `render.yaml`: blueprint do Render com Web Service + PostgreSQL.
-- `Back/FlowPay/Dockerfile`: build Docker do backend Java 21.
-
-Passos:
-
-1. Suba o repositório para GitHub.
-2. No Render, use `New > Blueprint` e selecione o repositório.
-3. Confirme a criação do banco `flowpay-postgres` e do serviço `flowpay-backend`.
-4. Depois do primeiro deploy, copie a URL pública do backend, por exemplo `https://flowpay-backend.onrender.com`.
-5. Configure no Render a variável `FLOWPAY_CORS_ALLOWED_ORIGINS` com a URL final do frontend Vercel, por exemplo `https://flowpay.vercel.app`.
-6. Opcional para previews da Vercel: configure `FLOWPAY_CORS_ALLOWED_ORIGIN_PATTERNS=https://*.vercel.app`.
-
-No Render, RabbitMQ fica desligado por padrão:
-
-```text
-FLOWPAY_RABBIT_ENABLED=false
-FLOWPAY_DISTRIBUICAO_SCHEDULER_ENABLED=true
-```
-
-Assim o scheduler continua distribuindo pela fila lógica no banco. Se quiser RabbitMQ em produção, crie um broker externo e configure `SPRING_RABBITMQ_*` + `FLOWPAY_RABBIT_ENABLED=true`.
-
-### Frontend na Vercel
-
-Arquivos preparados:
-
-- `Front/vercel.json`: build Vite e fallback SPA.
-
-Passos:
-
-1. Na Vercel, importe o mesmo repositório.
-2. Configure `Root Directory` como `Front`.
-3. Configure a variável de ambiente:
-
-```text
-VITE_API_BASE_URL=https://flowpay-backend.onrender.com
-```
-
-4. Deploy.
-5. Volte no Render e ajuste `FLOWPAY_CORS_ALLOWED_ORIGINS` para o domínio final da Vercel.
-
-### Observacoes de Deploy
-
-- O Render injeta dados do Postgres via `render.yaml`; o backend monta a URL JDBC com host, porta e database.
-- Flyway roda automaticamente no boot e cria/valida o schema.
-- SSE funciona na Vercel usando `EventSource` apontando para `VITE_API_BASE_URL`.
-- O plano free do Render pode dormir; o primeiro request depois de inatividade pode demorar.
-
 ## Como Rodar Localmente
 
-Use localmente apenas para teste/desenvolvimento. Rode backend e frontend em terminais separados.
+### 1. Banco de dados
 
-1. Subir PostgreSQL/RabbitMQ local:
+```bash
+docker compose up -d postgres
+```
+
+RabbitMQ nao e necessario localmente se usar as env vars do CloudAMQP (veja Configuracao). Caso queira RabbitMQ local:
 
 ```bash
 docker compose up -d
 ```
 
-2. Em um terminal, rodar backend:
+### 2. Backend
+
+Antes de rodar, defina as variaveis de ambiente no terminal ou copie os valores de `as_variaveis_do_seu_ambiente`:
 
 ```powershell
+$env:SPRING_RABBITMQ_HOST="seu-host-rabbitmq"
+$env:SPRING_RABBITMQ_PORT=5671
+$env:SPRING_RABBITMQ_USERNAME="seu_valor"
+$env:SPRING_RABBITMQ_PASSWORD="seu_valor"
+$env:SPRING_RABBITMQ_VIRTUAL_HOST="seu_valor"
+$env:SPRING_RABBITMQ_SSL_ENABLED="true"
+
 cd Back\FlowPay
 .\mvnw.cmd spring-boot:run
 ```
 
-3. Em outro terminal, rodar frontend:
+### 3. Frontend
 
 ```bash
 cd Front
@@ -104,43 +64,91 @@ npm run dev
 - Backend: `http://localhost:8080`
 - Swagger UI: `http://localhost:8080/swagger-ui.html`
 - OpenAPI JSON: `http://localhost:8080/api-docs`
-- RabbitMQ Management: `http://localhost:15672` (`guest` / `guest`)
 
-## Testes e Build
+## Deploy no Render
 
-### Backend
+### Preparacao
+
+Arquivos versionados:
+
+- `render.yaml`: blueprint com Web Service + PostgreSQL gerenciado.
+- `Back/FlowPay/Dockerfile`: build Docker multi-stage.
+
+### Passos
+
+1. Crie uma branch `main` separada para producao.
+2. Empurre o repositorio para GitHub.
+3. No Render, use **New > Blueprint** e selecione o repositorio.
+4. Render cria o banco `flowpay-postgres` e o servico `flowpay-backend`.
+5. No dashboard do Render, adicione as seguintes env vars no servico `flowpay-backend` com os dados do CloudAMQP:
+
+   ```
+   SPRING_RABBITMQ_HOST=seu-host-rabbitmq
+   SPRING_RABBITMQ_PORT=5671
+   SPRING_RABBITMQ_USERNAME=seu_usuario
+   SPRING_RABBITMQ_PASSWORD=sua_senha
+   SPRING_RABBITMQ_VIRTUAL_HOST=seu_vhost
+   SPRING_RABBITMQ_SSL_ENABLED=true
+   FLOWPAY_CORS_ALLOWED_ORIGINS=https://flowpay.vercel.app
+   ```
+
+6. Apos o deploy, copie a URL do backend (ex.: `https://flowpay-backend.onrender.com`).
+
+### Frontend na Vercel
+
+1. Na Vercel, importe o mesmo repositorio.
+2. Configure **Root Directory** como `Front`.
+3. Adicione a env var:
+
+   ```
+   VITE_API_BASE_URL=https://flowpay-backend.onrender.com
+   ```
+
+4. Deploy.
+5. Atualize `FLOWPAY_CORS_ALLOWED_ORIGINS` no Render com o dominio final da Vercel.
+
+### Observacoes
+
+- O Render injeta automaticamente as credenciais do PostgreSQL nas env vars do servico.
+- Flyway roda no boot e gerencia o schema.
+- Nao e necessario container RabbitMQ no Render — o CloudAMQP e externo.
+- O plano free do Render pode hibernar; o primeiro request apos inatividade pode demorar alguns segundos.
+
+## Configuracao
+
+O `application.properties` usa placeholders `${VAR:default}`. O valor default funciona localmente com Postgres e RabbitMQ locais. Para usar CloudAMQP, defina as env vars no terminal. Consulte `as_variaveis_do_seu_ambiente` com os valores reais de desenvolvimento.
+
+Variaveis disponiveis:
+
+| Variavel | Default | Descricao |
+|---|---|---|
+| `SERVER_ADDRESS` | `0.0.0.0` | Endereco do servidor |
+| `SERVER_PORT` | `8080` | Porta do servidor |
+| `SPRING_DATASOURCE_HOST` | `localhost` | Host do PostgreSQL |
+| `SPRING_DATASOURCE_PORT` | `5432` | Porta do PostgreSQL |
+| `SPRING_DATASOURCE_DATABASE` | `flowpay` | Nome do banco |
+| `SPRING_DATASOURCE_USERNAME` | `postgres` | Usuario do banco |
+| `SPRING_DATASOURCE_PASSWORD` | `admin` | Senha do banco |
+| `SPRING_RABBITMQ_HOST` | `localhost` | Host do RabbitMQ |
+| `SPRING_RABBITMQ_PORT` | `5672` | Porta do RabbitMQ |
+| `SPRING_RABBITMQ_USERNAME` | `guest` | Usuario RabbitMQ |
+| `SPRING_RABBITMQ_PASSWORD` | `guest` | Senha RabbitMQ |
+| `SPRING_RABBITMQ_VIRTUAL_HOST` | `/` | Vhost RabbitMQ |
+| `SPRING_RABBITMQ_SSL_ENABLED` | `false` | SSL habilitado |
+| `FLOWPAY_RABBIT_ENABLED` | `true` | Habilitar worker RabbitMQ |
+| `FLOWPAY_DISTRIBUICAO_SCHEDULER_ENABLED` | `true` | Habilitar scheduler |
+| `FLOWPAY_DISTRIBUICAO_SCHEDULER_DELAY_MS` | `5000` | Intervalo do scheduler |
+| `FLOWPAY_CORS_ALLOWED_ORIGINS` | `http://localhost:5173` | Origens CORS permitidas |
+| `FLOWPAY_CORS_ALLOWED_ORIGIN_PATTERNS` | (vazio) | Padroes de origem CORS |
+
+## Testes
 
 ```powershell
 cd Back\FlowPay
 .\mvnw.cmd test
 ```
 
-Os testes usam o schema `flowpay_test` dentro do banco local `flowpay`, separado do schema `public` usado pela aplicacao em desenvolvimento. A suite limpa `atendimentos` antes de cada teste, mas agora isso acontece apenas no schema de teste.
-
-### Frontend
-
-```bash
-cd Front
-npm run build
-```
-
-## Configuracao
-
-O backend usa defaults locais seguros em `application.properties` e aceita override por variaveis de ambiente. O arquivo `arquivo_de_variaveis` existe apenas para documentar os nomes esperados, sem segredos reais. Ele nao e usado automaticamente em producao.
-
-Exemplo:
-
-```bash
-SPRING_DATASOURCE_URL=jdbc:postgresql://localhost:5432/flowpay
-SPRING_DATASOURCE_USERNAME=postgres
-SPRING_DATASOURCE_PASSWORD=admin
-SPRING_RABBITMQ_HOST=localhost
-SPRING_RABBITMQ_PORT=5672
-SPRING_RABBITMQ_USERNAME=guest
-SPRING_RABBITMQ_PASSWORD=guest
-```
-
-Use `arquivo_de_variaveis` como referencia. Credenciais reais de provedores externos nao devem ser versionadas.
+Os testes usam schema `flowpay_test` isolado do `public`. Nao requerem RabbitMQ (desligado nas configs de teste).
 
 ## Endpoints Principais
 
@@ -153,30 +161,30 @@ Use `arquivo_de_variaveis` como referencia. Credenciais reais de provedores exte
 - `GET /api/dashboard/resumo`
 - `GET /api/dashboard/stream`
 
-Exemplos prontos estao em `Docs/api-examples.http`.
+Exemplos em `Docs/api-examples.http`.
 
 ## Decisoes de Arquitetura
 
 - O banco e a fonte da verdade da fila: `status = AGUARDANDO`, ordenado por `criadoEm`.
-- RabbitMQ e gatilho de processamento, nao a fila operacional final.
-- Atribuicao e finalizacao sao transacionais.
-- A concorrencia e protegida com lock por squad e `SELECT ... FOR UPDATE SKIP LOCKED`.
-- Eventos SSE sao publicados apos commit para evitar dashboard refletir estado que pode sofrer rollback.
-- Assunto e entidade persistida; nao ha classificacao por regex/texto livre.
-- DTOs de entrada e saida ficam separados.
+- RabbitMQ e gatilho de processamento, nao a fila operacional.
+- Atribuicao e finalizacao sao transacionais com `SELECT FOR UPDATE SKIP LOCKED`.
+- Eventos SSE publicados apos commit para evitar rollback parcial no dashboard.
+- Assunto e entidade persistida; sem classificacao por regex.
+- DTOs de entrada e saida separados.
 
 ## Trade-offs
 
-- Nao ha autenticacao/autorizacao nesta versao.
-- Nao ha multi-instancia com outbox distribuido; isso esta documentado como melhoria futura.
-- O frontend usa graficos CSS para manter a entrega leve, sem biblioteca de chart.
-- Scheduler funciona como fallback para mensagens RabbitMQ perdidas ou indisponibilidade temporaria.
+- Sem autenticacao/autorizacao nesta versao.
+- Sem multi-instancia com outbox (melhoria futura).
+- Graficos CSS (sem biblioteca de chart).
+- Scheduler como fallback do RabbitMQ.
 
 ## Estrutura
 
 ```text
 Back/FlowPay/        Backend Spring Boot
 Front/               Frontend React
-Docs/                Documentacao de produto, comportamento, modelos e exemplos
-docker-compose.yml   Infra local PostgreSQL + RabbitMQ
+Docs/                Documentacao e exemplos
+docker-compose.yml   Infra local (PostgreSQL + RabbitMQ opcional)
+render.yaml          Blueprint Render
 ```

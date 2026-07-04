@@ -1,0 +1,47 @@
+services:
+  - type: web
+    name: flowpay-backend
+    env: docker
+    repo: https://github.com/anomalyco/flowpay
+    branch: main
+    dockerfilePath: Back/FlowPay/Dockerfile
+    envVars:
+      - key: SPRING_DATASOURCE_HOST
+        fromService:
+          type: postgres
+          name: flowpay-postgres
+          property: host
+      - key: SPRING_DATASOURCE_PORT
+        fromService:
+          type: postgres
+          name: flowpay-postgres
+          property: port
+      - key: SPRING_DATASOURCE_DATABASE
+        fromService:
+          type: postgres
+          name: flowpay-postgres
+          property: database
+      - key: SPRING_DATASOURCE_USERNAME
+        fromService:
+          type: postgres
+          name: flowpay-postgres
+          property: user
+      - key: SPRING_DATASOURCE_PASSWORD
+        fromService:
+          type: postgres
+          name: flowpay-postgres
+          property: password
+      - key: FLOWPAY_RABBIT_ENABLED
+        value: "true"
+      - key: FLOWPAY_DISTRIBUICAO_SCHEDULER_ENABLED
+        value: "true"
+      - key: SPRING_RABBITMQ_SSL_ENABLED
+        value: "true"
+      - key: SPRING_RABBITMQ_PORT
+        value: "5671"
+
+databases:
+  - name: flowpay-postgres
+    databaseName: flowpay
+    plan: free
+    ipAllowList: []
