@@ -23,6 +23,7 @@ export interface Atendimento {
   observacao?: string | null;
   status: StatusAtendimento;
   atendenteId?: string | null;
+  atendenteNome?: string | null;
   criadoEm: string;
   atribuidoEm?: string | null;
   finalizadoEm?: string | null;

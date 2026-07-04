@@ -637,9 +637,9 @@ tbody tr:hover {
 
 .filters {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 0.7rem;
-  min-width: min(100%, 360px);
+  min-width: min(100%, 560px);
 }
 
 .table-scroll {

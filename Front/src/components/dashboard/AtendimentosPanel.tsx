@@ -10,7 +10,10 @@ type AtendimentosPanelProps = {
   onChanged: () => void;
 };
 
-const STATUS_OPTIONS: Array<StatusAtendimento | "TODOS"> = [
+type StatusFiltro = StatusAtendimento | "ABERTOS" | "TODOS";
+
+const STATUS_OPTIONS: StatusFiltro[] = [
+  "ABERTOS",
   "TODOS",
   "AGUARDANDO",
   "EM_ATENDIMENTO",
@@ -18,8 +21,9 @@ const STATUS_OPTIONS: Array<StatusAtendimento | "TODOS"> = [
 ];
 
 export function AtendimentosPanel({ atendimentos, atendentes, onChanged }: AtendimentosPanelProps) {
-  const [status, setStatus] = useState<StatusAtendimento | "TODOS">("TODOS");
+  const [status, setStatus] = useState<StatusFiltro>("ABERTOS");
   const [time, setTime] = useState<TimeAtendimento | "TODOS">("TODOS");
+  const [atendenteId, setAtendenteId] = useState<string>("TODOS");
   const [finalizandoId, setFinalizandoId] = useState<string | null>(null);
   const [selecionado, setSelecionado] = useState<Atendimento | null>(null);
   const [erro, setErro] = useState<string | null>(null);
@@ -46,9 +50,13 @@ export function AtendimentosPanel({ atendimentos, atendentes, onChanged }: Atend
   }, [selecionado]);
 
   const filtrados = atendimentos.filter((atendimento) => {
-    const statusOk = status === "TODOS" || atendimento.status === status;
+    const statusOk =
+      status === "TODOS" ||
+      (status === "ABERTOS" && atendimento.status !== "FINALIZADO") ||
+      atendimento.status === status;
     const timeOk = time === "TODOS" || atendimento.time === time;
-    return statusOk && timeOk;
+    const atendenteOk = atendenteId === "TODOS" || atendimento.atendenteId === atendenteId;
+    return statusOk && timeOk && atendenteOk;
   });
 
   function nomeAtendente(atendenteId?: string | null) {
@@ -83,10 +91,10 @@ export function AtendimentosPanel({ atendimentos, atendentes, onChanged }: Atend
         <div className="filters">
           <label>
             Status
-            <select value={status} onChange={(event) => setStatus(event.target.value as StatusAtendimento | "TODOS")}>
+            <select value={status} onChange={(event) => setStatus(event.target.value as StatusFiltro)}>
               {STATUS_OPTIONS.map((option) => (
                 <option key={option} value={option}>
-                  {option === "TODOS" ? "Todos" : STATUS_LABEL[option]}
+                  {option === "TODOS" ? "Todos" : option === "ABERTOS" ? "Abertos" : STATUS_LABEL[option]}
                 </option>
               ))}
             </select>
@@ -98,6 +106,17 @@ export function AtendimentosPanel({ atendimentos, atendentes, onChanged }: Atend
               {TIMES.map((option) => (
                 <option key={option} value={option}>
                   {timeLabel(option)}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label>
+            Atendente
+            <select value={atendenteId} onChange={(event) => setAtendenteId(event.target.value)}>
+              <option value="TODOS">Todos</option>
+              {atendentes.map((atendente) => (
+                <option key={atendente.id} value={atendente.id}>
+                  {atendente.nome} - {timeLabel(atendente.time)}
                 </option>
               ))}
             </select>

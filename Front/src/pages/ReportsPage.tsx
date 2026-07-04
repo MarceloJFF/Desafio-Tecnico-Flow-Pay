@@ -1,6 +1,6 @@
 import type { Atendimento, DashboardResumo, TimeAtendimento } from "../types";
 import { TIMES } from "../types";
-import { formatDuration, timeLabel } from "../utils/formatters";
+import { formatDateTime, formatDuration, timeLabel } from "../utils/formatters";
 
 type ReportsPageProps = {
   resumo: DashboardResumo;
@@ -23,6 +23,9 @@ export function ReportsPage({ resumo, atendimentos }: ReportsPageProps) {
     {} as Record<TimeAtendimento, number>,
   );
   const maiorFinalizados = Math.max(1, ...TIMES.map((time) => finalizadosPorTime[time] ?? 0));
+  const finalizados = atendimentos
+    .filter((atendimento) => atendimento.status === "FINALIZADO")
+    .sort((a, b) => new Date(b.finalizadoEm ?? b.criadoEm).getTime() - new Date(a.finalizadoEm ?? a.criadoEm).getTime());
 
   return (
     <div className="page-stack">
@@ -97,6 +100,47 @@ export function ReportsPage({ resumo, atendimentos }: ReportsPageProps) {
             ))}
           </div>
         </article>
+      </section>
+
+      <section className="panel panel--table">
+        <div className="panel-header">
+          <div>
+            <p className="eyebrow">Historico</p>
+            <h2>Atendimentos finalizados</h2>
+          </div>
+          <strong className="capacity-pill">{finalizados.length}</strong>
+        </div>
+
+        {finalizados.length === 0 ? (
+          <p className="empty-state">Nenhum atendimento finalizado ainda.</p>
+        ) : (
+          <div className="table-scroll">
+            <table>
+              <thead>
+                <tr>
+                  <th>Assunto</th>
+                  <th>Squad</th>
+                  <th>Atendente</th>
+                  <th>Criado</th>
+                  <th>Atribuido</th>
+                  <th>Finalizado</th>
+                </tr>
+              </thead>
+              <tbody>
+                {finalizados.map((atendimento) => (
+                  <tr key={atendimento.id}>
+                    <td>{atendimento.assuntoNome}</td>
+                    <td>{timeLabel(atendimento.time)}</td>
+                    <td>{atendimento.atendenteNome ?? "-"}</td>
+                    <td>{formatDateTime(atendimento.criadoEm)}</td>
+                    <td>{formatDateTime(atendimento.atribuidoEm)}</td>
+                    <td>{formatDateTime(atendimento.finalizadoEm)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </section>
     </div>
   );
