@@ -17,6 +17,12 @@ A aplicacao abre em `http://localhost:5173` e usa proxy Vite para o backend em `
 - `npm run build`: valida TypeScript e gera `dist/`.
 - `npm run preview`: serve o build localmente.
 
+## Deploy na Vercel
+
+- Configure o projeto com `Root Directory` = `Front`.
+- Configure `VITE_API_BASE_URL` com a URL do backend no Render.
+- O arquivo `vercel.json` ja define o build Vite e o fallback SPA.
+
 ## Funcionalidades
 
 - Snapshot inicial em `GET /api/dashboard/resumo`.
@@ -26,3 +32,6 @@ A aplicacao abre em `http://localhost:5173` e usa proxy Vite para o backend em `
 - Fila FIFO com tempo de espera atualizado no client.
 - Criacao de atendimento via `POST /api/atendimentos`.
 - Listagem e finalizacao de atendimentos via `PATCH /api/atendimentos/{id}/finalizar`.
+- Guia Reports com graficos CSS.
+- Guia Atendentes agrupada por squad.
+- Modal de detalhes do atendimento na guia Atendimentos.

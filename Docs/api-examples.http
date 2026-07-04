@@ -1,0 +1,44 @@
+@baseUrl = http://localhost:8080
+@cartoesAssuntoId = a0000000-0000-0000-0000-000000000001
+@emprestimosAssuntoId = a0000000-0000-0000-0000-000000000002
+@outrosAssuntoId = a0000000-0000-0000-0000-000000000003
+
+### Assuntos cadastrados
+GET {{baseUrl}}/api/assuntos
+
+### Criar atendimento de Cartoes
+POST {{baseUrl}}/api/atendimentos
+Content-Type: application/json
+
+{
+  "assuntoId": "{{cartoesAssuntoId}}",
+  "observacao": "Cliente informa compra nao reconhecida."
+}
+
+### Criar atendimento de Emprestimos
+POST {{baseUrl}}/api/atendimentos
+Content-Type: application/json
+
+{
+  "assuntoId": "{{emprestimosAssuntoId}}",
+  "observacao": "Cliente quer simular renovacao de contrato."
+}
+
+### Listar todos os atendimentos
+GET {{baseUrl}}/api/atendimentos
+
+### Listar fila por status
+GET {{baseUrl}}/api/atendimentos?status=AGUARDANDO
+
+### Listar em atendimento por time
+GET {{baseUrl}}/api/atendimentos?status=EM_ATENDIMENTO&time=CARTOES
+
+### Snapshot do dashboard
+GET {{baseUrl}}/api/dashboard/resumo
+
+### Stream SSE do dashboard
+GET {{baseUrl}}/api/dashboard/stream
+
+### Finalizar atendimento
+@atendimentoId = cole-o-id-aqui
+PATCH {{baseUrl}}/api/atendimentos/{{atendimentoId}}/finalizar

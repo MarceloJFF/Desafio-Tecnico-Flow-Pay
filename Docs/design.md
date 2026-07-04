@@ -12,6 +12,8 @@ Uma única página principal (`/dashboard`), sem necessidade de roteamento compl
 Front/src/
 ├── pages/
 │   └── DashboardPage.tsx
+│   └── ReportsPage.tsx
+│   └── AtendentesPage.tsx
 ├── components/
 │   ├── layout/
 │   │   └── AppHeader.tsx
@@ -36,15 +38,16 @@ Front/src/
 
 ---
 
-## 2. `DashboardPage.tsx` — Página Principal
+## 2. `DashboardPage.tsx` — Shell Principal
 
-**Responsabilidade:** orquestrar o carregamento inicial via snapshot REST e assinatura do stream SSE.
+**Responsabilidade:** orquestrar carregamento inicial, stream SSE e navegacao interna entre Dashboard, Reports, Atendimentos e Atendentes.
 
 **Fluxo:**
 1. Ao montar, chama `useDashboardSnapshot()` → `GET /api/dashboard/resumo` para estado inicial.
 2. Em paralelo, `useDashboardStream()` abre `EventSource` em `/api/dashboard/stream`.
 3. Cada evento recebido atualiza o estado local (merge incremental, não re-fetch completo).
 4. Se a conexão SSE cair e reconectar, dispara novo snapshot REST para resincronizar.
+5. Renderiza as guias internas sem roteador externo, mantendo estado compartilhado de snapshot, atendimentos e assuntos.
 
 O backend processa distribuição de forma assíncrona via RabbitMQ. Portanto, um atendimento recém-criado pode aparecer brevemente como `AGUARDANDO` antes do worker atribuir para um atendente.
 

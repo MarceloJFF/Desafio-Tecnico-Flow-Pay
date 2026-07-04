@@ -141,3 +141,11 @@ Essas condições devem ser **sempre verdadeiras**, em qualquer momento, sob qua
 3. Um `atendimento` `FINALIZADO` nunca volta a `EM_ATENDIMENTO` ou `AGUARDANDO`.
 4. A soma de `atendimentosAtivos` de todos os atendentes de um time é sempre igual à quantidade de atendimentos `EM_ATENDIMENTO` daquele time.
 5. Um atendimento nunca é atribuído a um atendente de outro time.
+
+---
+
+## 11. Observacao Sobre Testes Locais
+
+- A suite de integracao limpa `atendimentos` antes de cada teste para garantir cenarios deterministas.
+- Por isso, testes usam o schema `flowpay_test` dentro do banco `flowpay`, separado do schema `public` usado pela aplicacao em desenvolvimento.
+- Flyway cria/atualiza o schema `flowpay_test` automaticamente durante a execucao dos testes.

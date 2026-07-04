@@ -24,6 +24,8 @@ public record AtendimentoResponse(
 		StatusAtendimento status,
 		@Schema(description = "Identificador do atendente atribuido, nulo enquanto aguardando")
 		UUID atendenteId,
+		@Schema(description = "Nome do atendente atribuido, nulo enquanto aguardando")
+		String atendenteNome,
 		@Schema(description = "Data/hora de criacao")
 		LocalDateTime criadoEm,
 		@Schema(description = "Data/hora de atribuicao ao atendente")

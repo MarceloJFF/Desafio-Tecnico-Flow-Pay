@@ -18,8 +18,8 @@
 
 ## Verified Tooling State
 - Backend is Spring Boot `4.1.0` with `spring-boot-starter-webmvc`, `spring-boot-starter-data-jpa`, Flyway, PostgreSQL driver, Lombok, and Maven wrapper `3.3.4` downloading Maven `3.9.16`.
-- `src/main/resources/application.properties` points to local PostgreSQL database `flowpay` with `spring.jpa.hibernate.ddl-auto=validate`; Flyway migrations live under `src/main/resources/db/migration`.
-- No Docker Compose, lint, formatter, or CI workflow is currently configured.
+- `src/main/resources/application.properties` points to local PostgreSQL database `flowpay` and local RabbitMQ by default through environment-variable fallbacks; Flyway migrations live under `src/main/resources/db/migration`.
+- Docker Compose is configured at the repository root for PostgreSQL and RabbitMQ. No lint, formatter, or CI workflow is currently configured.
 - No root README or existing agent instructions were present when this file was created.
 
 ## Product Constraints To Preserve

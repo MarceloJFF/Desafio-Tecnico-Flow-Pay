@@ -15,6 +15,7 @@ final class AtendimentoMapper {
 	static AtendimentoResponse toResponse(Atendimento atendimento) {
 		Atendente atendente = atendimento.getAtendente();
 		UUID atendenteId = atendente == null ? null : atendente.getId();
+		String atendenteNome = atendente == null ? null : atendente.getNome();
 		Assunto assunto = atendimento.getAssunto();
 
 		return new AtendimentoResponse(
@@ -25,6 +26,7 @@ final class AtendimentoMapper {
 				atendimento.getObservacao(),
 				atendimento.getStatus(),
 				atendenteId,
+				atendenteNome,
 				atendimento.getCriadoEm(),
 				atendimento.getAtribuidoEm(),
 				atendimento.getFinalizadoEm());

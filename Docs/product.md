@@ -54,6 +54,13 @@ Sistema que recebe solicitações de atendimento, distribui automaticamente para
 ### 7. Frontend React
 - Dashboard em `Front/` consumindo o snapshot REST e o stream SSE.
 - Tela permite criar atendimento, acompanhar filas, ver ocupacao dos atendentes e finalizar atendimentos em andamento.
+- Guia Reports com graficos de operacao.
+- Guia Atendimentos com filtros, modal de detalhes e finalizacao.
+- Guia Atendentes agrupada por squad.
+
+### 8. Entrega e Execucao Local
+- Docker Compose local para PostgreSQL e RabbitMQ.
+- README raiz com deploy Render/Vercel, arquitetura, trade-offs, comandos locais e endpoints principais.
 
 ---
 

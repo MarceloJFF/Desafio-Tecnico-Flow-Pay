@@ -36,11 +36,13 @@ Entregar uma solução correta, testável e com boa experiência de monitorament
 - Snapshot REST do dashboard em `GET /api/dashboard/resumo`.
 - Stream SSE do dashboard em `GET /api/dashboard/stream`.
 - Frontend React em `Front/` consumindo REST + SSE.
+- Guia Reports, guia Atendimentos com modal de detalhes e guia Atendentes por squad.
+- Docker Compose e scripts locais de dev/teste para facilitar avaliacao.
 - Swagger/OpenAPI em `/swagger-ui.html` e `/api-docs`.
 - Testes automatizados cobrindo a regra de negócio (limite de 3, fila, concorrência).
 
 ### Planejado nas próximas fases
-- Polimento de entrega, README geral e padronizacao de ambiente.
+- Autenticacao/autorizacao, outbox, DLQ/retry e escala horizontal.
 
 ### Fora do escopo
 - Autenticação/autorização.
@@ -124,4 +126,4 @@ Ver `phases.md` para o detalhamento com entregáveis por fase.
 - [x] Testes cobrindo a regra de negócio, incluindo cenário de concorrência.
 - [x] Dashboard backend reflete mudanças de estado via SSE, sem polling.
 - [x] Frontend React consome snapshot REST e stream SSE.
-- [ ] Ambiente completo com frontend e orquestração padronizada.
+- [x] Ambiente completo com frontend e orquestração padronizada.

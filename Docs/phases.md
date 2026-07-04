@@ -10,7 +10,7 @@ Divisão pensada para caber no prazo do desafio (48h), com cada fase gerando alg
 
 - Estrutura atual: `Back/FlowPay` (Spring Boot + Maven) e `Front/` reservado para React.
 - Backend conecta em Postgres local configurado em `application.properties`.
-- RabbitMQ configurado via CloudAMQP e controlado por `flowpay.rabbit.enabled`.
+- RabbitMQ configurado localmente via Docker Compose por padrao e controlado por `flowpay.rabbit.enabled`.
 - Swagger disponível em `GET /swagger-ui.html`.
 
 **Entregável atual:** backend sobe localmente com Maven, conecta no Postgres e expõe API documentada via Swagger.
@@ -99,12 +99,15 @@ Divisão pensada para caber no prazo do desafio (48h), com cada fase gerando alg
 
 ## Fase 6 — Polimento e Entrega
 
-**Objetivo:** deixar o projeto fácil de avaliar.
+**Objetivo:** deixar o projeto fácil de avaliar. **Implementado.**
 
-- README completo: como rodar, decisões de arquitetura, trade-offs (o que você me perguntou nas etapas anteriores vira ótimo conteúdo aqui).
-- Revisão dos testes (unitários + concorrência + repositório).
-- Conferir setup local/ambiente final com Postgres, RabbitMQ, backend e frontend sem passos manuais extras.
-- Opcional (se sobrar tempo): script/collection Postman ou exemplos de `curl` para popular atendimentos rapidamente e ver o dashboard reagir ao vivo.
+- README raiz completo com como rodar, arquitetura, endpoints, trade-offs e scripts.
+- Configuracao local por Docker Compose com PostgreSQL e RabbitMQ.
+- Configuracao sensivel externalizada por variaveis de ambiente.
+- Execucao local documentada com backend e frontend em terminais separados.
+- Deploy documentado para backend no Render e frontend na Vercel.
+- Exemplos manuais em `Docs/api-examples.http`.
+- Validacao backend/frontend documentada.
 
 **Entregável final:** repositório completo, rodável com um comando, documentado.
 

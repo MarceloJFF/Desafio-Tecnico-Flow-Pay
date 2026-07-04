@@ -11,6 +11,8 @@ node_modules/
 dist/
 .vite/
 *.local
+.env
+!arquivo_de_variaveis
 *.tsbuildinfo
 
 ### STS ###
