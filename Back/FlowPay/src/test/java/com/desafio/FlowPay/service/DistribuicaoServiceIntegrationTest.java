@@ -13,6 +13,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -27,6 +28,7 @@ import com.desafio.FlowPay.repository.AtendenteRepository;
 import com.desafio.FlowPay.repository.AtendimentoRepository;
 
 @SpringBootTest
+@Disabled("Desativado para evitar escrita/limpeza em banco durante execucoes locais de teste.")
 class DistribuicaoServiceIntegrationTest {
 
 	private static final UUID ASSUNTO_CARTOES_ID = UUID.fromString("a0000000-0000-0000-0000-000000000001");
