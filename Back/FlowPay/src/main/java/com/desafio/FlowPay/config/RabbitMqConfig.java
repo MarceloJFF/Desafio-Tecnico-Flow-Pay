@@ -4,6 +4,8 @@ import org.springframework.amqp.core.Binding;
 import org.springframework.amqp.core.BindingBuilder;
 import org.springframework.amqp.core.DirectExchange;
 import org.springframework.amqp.core.Queue;
+import org.springframework.amqp.support.converter.JacksonJsonMessageConverter;
+import org.springframework.amqp.support.converter.MessageConverter;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -31,5 +33,10 @@ public class RabbitMqConfig {
 		return BindingBuilder.bind(distribuicaoQueue)
 				.to(distribuicaoExchange)
 				.with(DISTRIBUICAO_ROUTING_KEY);
+	}
+
+	@Bean
+	MessageConverter jsonMessageConverter() {
+		return new JacksonJsonMessageConverter("com.desafio.FlowPay.messaging");
 	}
 }

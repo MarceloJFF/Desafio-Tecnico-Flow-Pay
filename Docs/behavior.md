@@ -76,34 +76,60 @@ O assunto é uma **entidade persistida** (`assuntos`), consultável via `GET /ap
 
 ---
 
-## 7. Dashboard — Comportamento do Stream SSE
+## 7. Dashboard — Snapshot REST Atual
 
-- Conexão: `GET /api/dashboard/stream`, mantida aberta enquanto o cliente (browser) estiver com a tela aberta.
-- Eventos emitidos:
-  - `atendimento-criado`
-  - `atendimento-atribuido`
-  - `atendimento-finalizado`
-- Cada evento carrega o payload mínimo necessário para o frontend atualizar o estado local (não exige nova requisição REST a cada evento).
-- **Reconexão:** se a conexão cair (rede instável, backend reiniciado), o `EventSource` do browser tenta reconectar automaticamente (comportamento nativo). Ao reconectar, o frontend deve buscar o estado atual via `GET /api/dashboard/resumo` (snapshot) antes de voltar a escutar o stream, para evitar exibir dados desatualizados durante o gap de reconexão.
-- **Múltiplos gestores conectados simultaneamente:** todos recebem o mesmo evento (broadcast simples via lista de `SseEmitter` ativos no backend).
+- Endpoint implementado: `GET /api/dashboard/resumo`.
+- Retorna quantidade em fila por time, quantidade em atendimento por time, total finalizado no dia, tempo médio de espera e status dos atendentes.
+- O dashboard deve usar este endpoint como snapshot inicial.
+- SSE (`GET /api/dashboard/stream`) está planejado para a Fase 4, mas ainda não está implementado no backend atual.
 
 ---
 
-## 8. Comportamentos de Erro
+## 8. API REST e Swagger
+
+Endpoints implementados:
+
+| Método | Endpoint | Comportamento |
+|---|---|---|
+| `GET` | `/api/assuntos` | Lista assuntos cadastrados. |
+| `POST` | `/api/atendimentos` | Cria atendimento `AGUARDANDO` e publica evento RabbitMQ. |
+| `GET` | `/api/atendimentos?status=&atendenteId=&time=` | Lista atendimentos, com filtros opcionais por status, atendente e time. |
+| `PATCH` | `/api/atendimentos/{id}/finalizar` | Finaliza atendimento em andamento. |
+| `GET` | `/api/atendentes` | Lista atendentes e ocupação atual. |
+| `GET` | `/api/atendentes/{id}/atendimentos?status=` | Lista todos os atendimentos de um atendente, incluindo finalizados. |
+| `GET` | `/api/dashboard/resumo` | Retorna snapshot do dashboard. |
+
+Swagger UI:
+
+```text
+http://localhost:8080/swagger-ui.html
+```
+
+OpenAPI JSON:
+
+```text
+http://localhost:8080/api-docs
+```
+
+---
+
+## 9. Comportamentos de Erro
 
 | Cenário | Resposta esperada |
 |---|---|
 | Criar atendimento sem campo `assuntoId` | `400 Bad Request` |
 | Criar atendimento com `assuntoId` inexistente | `400 Bad Request` |
+| Payload JSON inválido | `400 Bad Request` |
+| Query param inválido, ex. `status=INVALIDO` | `400 Bad Request` |
 | Finalizar atendimento inexistente | `404 Not Found` |
 | Finalizar atendimento já finalizado | `409 Conflict` |
+| Finalizar atendimento que ainda está `AGUARDANDO` | `409 Conflict` |
 | Time sem nenhum atendente cadastrado | Atendimento permanece em fila indefinidamente (não é erro) |
 | RabbitMQ indisponível após criação | Scheduler reprocessa filas pelo banco quando a aplicação estiver ativa |
-| Falha de conexão SSE | Reconexão automática do browser + snapshot via REST ao reconectar |
 
 ---
 
-## 9. Garantias do Sistema (Invariantes)
+## 10. Garantias do Sistema (Invariantes)
 
 Essas condições devem ser **sempre verdadeiras**, em qualquer momento, sob qualquer carga:
 
@@ -111,3 +137,4 @@ Essas condições devem ser **sempre verdadeiras**, em qualquer momento, sob qua
 2. Um `atendimento` nunca tem `atendenteId` preenchido com `status = AGUARDANDO`.
 3. Um `atendimento` `FINALIZADO` nunca volta a `EM_ATENDIMENTO` ou `AGUARDANDO`.
 4. A soma de `atendimentosAtivos` de todos os atendentes de um time é sempre igual à quantidade de atendimentos `EM_ATENDIMENTO` daquele time.
+5. Um atendimento nunca é atribuído a um atendente de outro time.

@@ -5,6 +5,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -12,7 +13,7 @@ import com.desafio.FlowPay.model.Atendimento;
 import com.desafio.FlowPay.model.StatusAtendimento;
 import com.desafio.FlowPay.model.TimeAtendimento;
 
-public interface AtendimentoRepository extends JpaRepository<Atendimento, UUID> {
+public interface AtendimentoRepository extends JpaRepository<Atendimento, UUID>, JpaSpecificationExecutor<Atendimento> {
 
 	@Query(value = "SELECT a.* FROM atendimentos a WHERE a.id = :id FOR UPDATE", nativeQuery = true)
 	Optional<Atendimento> buscarPorIdComLock(@Param("id") UUID id);
@@ -28,7 +29,16 @@ public interface AtendimentoRepository extends JpaRepository<Atendimento, UUID> 
 
 	List<Atendimento> findByStatus(StatusAtendimento status);
 
+	List<Atendimento> findByAtendenteId(UUID atendenteId);
+
+	List<Atendimento> findByAtendenteIdAndStatus(UUID atendenteId, StatusAtendimento status);
+
+	List<Atendimento> findByAtribuidoEmIsNotNull();
+
 	List<Atendimento> findByStatusAndTimeOrderByCriadoEmAsc(StatusAtendimento status, TimeAtendimento time);
 
 	long countByStatusAndTime(StatusAtendimento status, TimeAtendimento time);
+
+	long countByStatusAndFinalizadoEmBetween(StatusAtendimento status, java.time.LocalDateTime inicio,
+			java.time.LocalDateTime fim);
 }

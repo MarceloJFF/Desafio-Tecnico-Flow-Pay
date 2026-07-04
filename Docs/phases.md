@@ -8,13 +8,12 @@ Divisão pensada para caber no prazo do desafio (48h), com cada fase gerando alg
 
 **Objetivo:** ambiente rodando de ponta a ponta, mesmo sem lógica de negócio ainda.
 
-- Estrutura de pastas `backend/` (Spring Boot + Gradle/Maven) e `frontend/` (React + Vite).
-- `docker-compose.yml` com Postgres.
-- Backend sobe e conecta no Postgres (health check `GET /actuator/health`).
-- Crie um controller que retorne faz uma chamada de "hello world" no backend.
-- README inicial com instruções de `docker-compose up`.
+- Estrutura atual: `Back/FlowPay` (Spring Boot + Maven) e `Front/` reservado para React.
+- Backend conecta em Postgres local configurado em `application.properties`.
+- RabbitMQ configurado via CloudAMQP e controlado por `flowpay.rabbit.enabled`.
+- Swagger disponível em `GET /swagger-ui.html`.
 
-**Entregável:** `docker-compose up` sobe tudo, front conversa com back.
+**Entregável atual:** backend sobe localmente com Maven, conecta no Postgres e expõe API documentada via Swagger.
 
 ---
 
@@ -24,7 +23,7 @@ Divisão pensada para caber no prazo do desafio (48h), com cada fase gerando alg
 
 - Entidades JPA (`Atendente`, `Atendimento`, enums `TimeAtendimento`, `StatusAtendimento`) — ver `models.md`.
 - Migrations via Flyway/Liquibase.
-- Seed inicial de atendentes (ex: 2-3 por time) para facilitar testes manuais.
+- Seed inicial de 1 atendente por time para facilitar testes manuais de fila.
 
 **Entregável:** banco criado automaticamente ao subir o backend, com dados de teste.
 
@@ -54,7 +53,11 @@ Divisão pensada para caber no prazo do desafio (48h), com cada fase gerando alg
 - `POST /api/atendimentos`
 - `PATCH /api/atendimentos/{id}/finalizar`
 - `GET /api/atendimentos?status=`
+- `GET /api/atendimentos?atendenteId=`
+- `GET /api/atendimentos?time=`
+- `GET /api/assuntos`
 - `GET /api/atendentes`
+- `GET /api/atendentes/{id}/atendimentos`
 - `GET /api/dashboard/resumo`
 - Swagger/OpenAPI configurado (springdoc-openapi).
 - Tratamento de erros padronizado (400/404/409 conforme `behavior.md`).
@@ -96,7 +99,7 @@ Divisão pensada para caber no prazo do desafio (48h), com cada fase gerando alg
 
 - README completo: como rodar, decisões de arquitetura, trade-offs (o que você me perguntou nas etapas anteriores vira ótimo conteúdo aqui).
 - Revisão dos testes (unitários + concorrência + repositório).
-- Conferir que `docker-compose up` sobe tudo sem passos manuais extras.
+- Conferir setup local/ambiente final com Postgres, RabbitMQ, backend e frontend sem passos manuais extras.
 - Opcional (se sobrar tempo): script/collection Postman ou exemplos de `curl` para popular atendimentos rapidamente e ver o dashboard reagir ao vivo.
 
 **Entregável final:** repositório completo, rodável com um comando, documentado.

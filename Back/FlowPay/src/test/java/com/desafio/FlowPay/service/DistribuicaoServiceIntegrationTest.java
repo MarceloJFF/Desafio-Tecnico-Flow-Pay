@@ -32,6 +32,7 @@ class DistribuicaoServiceIntegrationTest {
 	private static final UUID ASSUNTO_CARTOES_ID = UUID.fromString("a0000000-0000-0000-0000-000000000001");
 	private static final UUID ASSUNTO_EMPRESTIMOS_ID = UUID.fromString("a0000000-0000-0000-0000-000000000002");
 	private static final UUID ASSUNTO_OUTROS_ID = UUID.fromString("a0000000-0000-0000-0000-000000000003");
+	private static final int CAPACIDADE_POR_TIME = 3;
 
 	private final DistribuicaoService distribuicaoService;
 	private final DistribuicaoProcessor distribuicaoProcessor;
@@ -87,9 +88,9 @@ class DistribuicaoServiceIntegrationTest {
 		}
 
 		assertThat(atendimentoRepository.countByStatusAndTime(StatusAtendimento.EM_ATENDIMENTO, TimeAtendimento.CARTOES))
-				.isEqualTo(9);
+				.isEqualTo(CAPACIDADE_POR_TIME);
 		assertThat(atendimentoRepository.countByStatusAndTime(StatusAtendimento.AGUARDANDO, TimeAtendimento.CARTOES))
-				.isEqualTo(1);
+				.isEqualTo(10 - CAPACIDADE_POR_TIME);
 		assertThat(atendenteRepository.findAll())
 				.filteredOn(atendente -> atendente.getTime() == TimeAtendimento.CARTOES)
 				.allSatisfy(atendente -> assertThat(atendente.getAtendimentosAtivos()).isBetween(0, 3));
@@ -126,7 +127,7 @@ class DistribuicaoServiceIntegrationTest {
 		assertThat(reatribuido.getStatus()).isEqualTo(StatusAtendimento.EM_ATENDIMENTO);
 		assertThat(reatribuido.getAtendente()).isNotNull();
 		assertThat(atendimentoRepository.countByStatusAndTime(StatusAtendimento.AGUARDANDO, TimeAtendimento.CARTOES))
-				.isZero();
+				.isEqualTo(10 - CAPACIDADE_POR_TIME - 1);
 	}
 
 	@Test
@@ -181,10 +182,10 @@ class DistribuicaoServiceIntegrationTest {
 
 		assertThat(atendentesCartoes).allSatisfy(atendente -> assertThat(atendente.getAtendimentosAtivos()).isBetween(0, 3));
 		assertThat(atendimentoRepository.countByStatusAndTime(StatusAtendimento.EM_ATENDIMENTO, TimeAtendimento.CARTOES))
-				.isEqualTo(9);
+				.isEqualTo(CAPACIDADE_POR_TIME);
 		assertThat(atendimentoRepository.countByStatusAndTime(StatusAtendimento.AGUARDANDO, TimeAtendimento.CARTOES))
-				.isEqualTo(totalAtendimentos - 9);
-		assertThat(ativosDosAtendentes).isEqualTo(9);
+				.isEqualTo(totalAtendimentos - CAPACIDADE_POR_TIME);
+		assertThat(ativosDosAtendentes).isEqualTo(CAPACIDADE_POR_TIME);
 	}
 
 	@Test
@@ -203,17 +204,17 @@ class DistribuicaoServiceIntegrationTest {
 		}
 
 		assertThat(atendimentoRepository.countByStatusAndTime(StatusAtendimento.EM_ATENDIMENTO, TimeAtendimento.CARTOES))
-				.isEqualTo(9);
+				.isEqualTo(CAPACIDADE_POR_TIME);
 		assertThat(atendimentoRepository.countByStatusAndTime(StatusAtendimento.EM_ATENDIMENTO, TimeAtendimento.EMPRESTIMOS))
-				.isEqualTo(9);
+				.isEqualTo(CAPACIDADE_POR_TIME);
 		assertThat(atendimentoRepository.countByStatusAndTime(StatusAtendimento.EM_ATENDIMENTO, TimeAtendimento.OUTROS))
-				.isEqualTo(9);
+				.isEqualTo(CAPACIDADE_POR_TIME);
 		assertThat(atendimentoRepository.countByStatusAndTime(StatusAtendimento.AGUARDANDO, TimeAtendimento.CARTOES))
-				.isEqualTo(1);
+				.isEqualTo(10 - CAPACIDADE_POR_TIME);
 		assertThat(atendimentoRepository.countByStatusAndTime(StatusAtendimento.AGUARDANDO, TimeAtendimento.EMPRESTIMOS))
-				.isEqualTo(1);
+				.isEqualTo(10 - CAPACIDADE_POR_TIME);
 		assertThat(atendimentoRepository.countByStatusAndTime(StatusAtendimento.AGUARDANDO, TimeAtendimento.OUTROS))
-				.isEqualTo(1);
+				.isEqualTo(10 - CAPACIDADE_POR_TIME);
 		assertThat(atendimentoRepository.findByStatus(StatusAtendimento.EM_ATENDIMENTO))
 				.allSatisfy(atendimento -> assertThat(atendimento.getAtendente().getTime()).isEqualTo(atendimento.getTime()));
 	}
