@@ -2,6 +2,26 @@
 
 Sistema de distribuicao e monitoramento de atendimentos.
 
+## Descricao Do Desafio
+
+A FlowPay e uma fintech que esta estruturando sua central de relacionamento. Essa central atende diversos tipos de solicitacoes dos clientes, sendo os principais: problemas com cartao e contratacao de emprestimo.
+
+A FlowPay organizou seus atendentes em 3 times de atendimento:
+
+- Time Cartoes: para solicitacoes com assunto "Problemas com cartao".
+- Time Emprestimos: para solicitacoes de "Contratacao de emprestimo".
+- Time Outros Assuntos: para os demais assuntos.
+
+O software deve implementar a seguinte politica de distribuicao:
+
+1. Cada atendente deve atender no maximo 3 pessoas de forma simultanea.
+2. Caso todos os atendentes de um time estejam ocupados, os atendimentos devem ser enfileirados e distribuidos assim que um atendente ficar livre.
+
+Requisitos adicionais do desafio pleno full stack:
+
+1. Software de Distribuicao (Back-end): a API do software de distribuicao deve ser disponibilizada no estilo REST.
+2. Dashboard de Acompanhamento (Front-end): deve existir uma tela de dashboard para acompanhar os dados de atendimentos em tempo real.
+
 ## Stack
 
 - Backend: Java 21, Spring Boot, Spring MVC, Spring Data JPA, Flyway, PostgreSQL, RabbitMQ (CloudAMQP), SSE, Swagger/OpenAPI.
@@ -36,14 +56,14 @@ docker compose up -d
 
 ### 2. Backend
 
-Antes de rodar, defina as variaveis de ambiente no terminal ou copie os valores de `as_variaveis_do_seu_ambiente`:
+Antes de rodar, defina as variaveis de ambiente do RabbitMQ no terminal. Para RabbitMQ local, use os defaults do `application.properties`. Para CloudAMQP, informe os dados do seu broker:
 
 ```powershell
 $env:SPRING_RABBITMQ_HOST="seu-host-rabbitmq"
 $env:SPRING_RABBITMQ_PORT=5671
-$env:SPRING_RABBITMQ_USERNAME="seu_valor"
-$env:SPRING_RABBITMQ_PASSWORD="seu_valor"
-$env:SPRING_RABBITMQ_VIRTUAL_HOST="seu_valor"
+$env:SPRING_RABBITMQ_USERNAME="seu_usuario"
+$env:SPRING_RABBITMQ_PASSWORD="sua_senha"
+$env:SPRING_RABBITMQ_VIRTUAL_HOST="seu_vhost"
 $env:SPRING_RABBITMQ_SSL_ENABLED="true"
 
 cd Back\FlowPay
@@ -116,7 +136,7 @@ Arquivos versionados:
 
 ## Configuracao
 
-O `application.properties` usa placeholders `${VAR:default}`. O valor default funciona localmente com Postgres e RabbitMQ locais. Para usar CloudAMQP, defina as env vars no terminal. Consulte `as_variaveis_do_seu_ambiente` com os valores reais de desenvolvimento.
+O `application.properties` usa placeholders `${VAR:default}`. O valor default funciona localmente com Postgres e RabbitMQ locais. Para usar PostgreSQL ou RabbitMQ externos, defina as variaveis de ambiente correspondentes no terminal, na IDE ou no painel do provedor de deploy.
 
 Variaveis disponiveis:
 
