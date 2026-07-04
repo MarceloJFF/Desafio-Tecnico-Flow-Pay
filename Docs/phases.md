@@ -68,11 +68,11 @@ Divisão pensada para caber no prazo do desafio (48h), com cada fase gerando alg
 
 ## Fase 4 — SSE para o Dashboard
 
-**Objetivo:** tempo real de fato.
+**Objetivo:** tempo real de fato. **Implementado no backend.**
 
 - `DashboardController` com `GET /api/dashboard/stream` usando `SseEmitter`.
-- `ApplicationEventPublisher` interno disparando eventos a cada criação/atribuição/finalização.
-- Gerenciamento de lista de emitters ativos (adicionar ao conectar, remover ao desconectar/erro).
+- `ApplicationEventPublisher` interno disparando eventos a cada criação/atribuição/finalização após commit.
+- Gerenciamento de lista de emitters ativos (adicionar ao conectar, remover ao desconectar/erro/falha de envio).
 - Teste manual com múltiplas abas do browser conectadas simultaneamente.
 
 **Entregável:** ao criar/finalizar atendimento via Swagger ou curl, qualquer client conectado no `/stream` recebe o evento imediatamente.
@@ -89,7 +89,9 @@ Divisão pensada para caber no prazo do desafio (48h), com cada fase gerando alg
 - Indicador de status de conexão.
 - Estilização básica, mas clara (não precisa ser um design system completo).
 
-**Entregável:** dashboard funcional, atualizando sozinho ao criar/finalizar atendimentos em outra aba/terminal.
+**Entregável:** dashboard funcional, atualizando sozinho ao criar/finalizar atendimentos em outra aba/terminal, telas de listagem de atendimentos e atendentes, e outros endpoints.
+
+
 
 ---
 

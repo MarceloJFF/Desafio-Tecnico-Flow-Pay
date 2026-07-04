@@ -76,12 +76,14 @@ O assunto é uma **entidade persistida** (`assuntos`), consultável via `GET /ap
 
 ---
 
-## 7. Dashboard — Snapshot REST Atual
+## 7. Dashboard — Snapshot REST e Stream SSE
 
 - Endpoint implementado: `GET /api/dashboard/resumo`.
 - Retorna quantidade em fila por time, quantidade em atendimento por time, total finalizado no dia, tempo médio de espera e status dos atendentes.
-- O dashboard deve usar este endpoint como snapshot inicial.
-- SSE (`GET /api/dashboard/stream`) está planejado para a Fase 4, mas ainda não está implementado no backend atual.
+- O dashboard deve usar este endpoint como snapshot inicial e após reconexões.
+- Stream SSE implementado: `GET /api/dashboard/stream` com `Content-Type: text/event-stream`.
+- Ao conectar, o backend envia `dashboard-conectado` com payload `"ok"`.
+- Eventos de negócio emitidos após commit: `atendimento-criado`, `atendimento-atribuido` e `atendimento-finalizado`.
 
 ---
 
@@ -98,6 +100,7 @@ Endpoints implementados:
 | `GET` | `/api/atendentes` | Lista atendentes e ocupação atual. |
 | `GET` | `/api/atendentes/{id}/atendimentos?status=` | Lista todos os atendimentos de um atendente, incluindo finalizados. |
 | `GET` | `/api/dashboard/resumo` | Retorna snapshot do dashboard. |
+| `GET` | `/api/dashboard/stream` | Abre stream SSE para atualizações incrementais do dashboard. |
 
 Swagger UI:
 

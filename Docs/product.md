@@ -6,7 +6,7 @@ Resumo funcional do produto, pensado para leitura rápida (PM/gestor).
 
 ## Visão Geral
 
-Sistema que recebe solicitações de atendimento, distribui automaticamente para o time e atendente corretos, e expõe métricas para gestores acompanharem a operação. Atualização em tempo real via SSE está planejada para a próxima fase.
+Sistema que recebe solicitações de atendimento, distribui automaticamente para o time e atendente corretos, e expõe métricas para gestores acompanharem a operação com atualização em tempo real via SSE.
 
 ---
 
@@ -37,17 +37,18 @@ Sistema que recebe solicitações de atendimento, distribui automaticamente para
 - Essa tentativa acontece via mensagem `VAGA_LIBERADA` consumida pelo worker.
 
 ### 5. Dashboard de Monitoramento
-- Backend já expõe um snapshot REST para gestores acompanharem:
+- Backend expõe um snapshot REST para gestores acompanharem:
   - Quantidade de atendimentos em andamento por time.
   - Quantidade de atendimentos em fila por time.
   - Ocupação de cada atendente (0 a 3).
   - Tempo médio de espera na fila.
   - Total de atendimentos finalizados no dia.
-- Atualização em tempo real via SSE está planejada para a próxima fase.
+- Stream SSE envia eventos de criação, atribuição e finalização em tempo real.
 
 ### 6. API REST
 - Endpoints para criar, listar e finalizar atendimentos.
 - Endpoint de métricas agregadas para o dashboard.
+- Endpoint SSE para stream de eventos em tempo real.
 - Swagger/OpenAPI para testar a API pela web.
 
 ---

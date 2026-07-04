@@ -24,13 +24,16 @@ public class DistribuicaoService {
 	private final AtendenteRepository atendenteRepository;
 	private final AssuntoRepository assuntoRepository;
 	private final DistribuicaoEventPublisher distribuicaoEventPublisher;
+	private final DashboardEventPublisher dashboardEventPublisher;
 
 	public DistribuicaoService(AtendimentoRepository atendimentoRepository, AtendenteRepository atendenteRepository,
-			AssuntoRepository assuntoRepository, DistribuicaoEventPublisher distribuicaoEventPublisher) {
+			AssuntoRepository assuntoRepository, DistribuicaoEventPublisher distribuicaoEventPublisher,
+			DashboardEventPublisher dashboardEventPublisher) {
 		this.atendimentoRepository = atendimentoRepository;
 		this.atendenteRepository = atendenteRepository;
 		this.assuntoRepository = assuntoRepository;
 		this.distribuicaoEventPublisher = distribuicaoEventPublisher;
+		this.dashboardEventPublisher = dashboardEventPublisher;
 	}
 
 	@Transactional
@@ -51,6 +54,7 @@ public class DistribuicaoService {
 
 		Atendimento salvo = atendimentoRepository.saveAndFlush(atendimento);
 		distribuicaoEventPublisher.atendimentoCriado(salvo.getId(), time);
+		dashboardEventPublisher.atendimentoCriado(salvo.getId(), time);
 		return atendimentoRepository.findById(salvo.getId()).orElseThrow();
 	}
 
@@ -75,6 +79,7 @@ public class DistribuicaoService {
 		atendente.setAtendimentosAtivos(Math.max(0, atendente.getAtendimentosAtivos() - 1));
 
 		distribuicaoEventPublisher.vagaLiberada(atendimento.getTime());
+		dashboardEventPublisher.atendimentoFinalizado(atendimento.getId(), atendimento.getTime(), atendente.getId());
 		return atendimento;
 	}
 }

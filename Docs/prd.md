@@ -1,7 +1,7 @@
 # PRD — Software de Distribuição e Monitoramento de Atendimentos (FlowPay)
 
 **Versão:** 2.0
-**Stack:** Monorepo — React (front planejado) + Spring Boot (back) + Postgres + RabbitMQ + Swagger/OpenAPI
+**Stack:** Monorepo — React (front planejado) + Spring Boot (back) + Postgres + RabbitMQ + SSE + Swagger/OpenAPI
 **Autor:** Marcelo (desafio técnico Pleno Full Stack)
 
 ---
@@ -23,7 +23,7 @@ Entregar uma solução correta, testável e com boa experiência de monitorament
 
 - Corretude da regra de negócio (limite de 3, fila, redistribuição automática).
 - API REST clara e documentada.
-- Dashboard com snapshot REST implementado e evolução planejada para **tempo real via SSE**.
+- Dashboard com snapshot REST e atualizações em **tempo real via SSE**.
 - Organização em monorepo, com backend e frontend versionados juntos.
 
 ---
@@ -34,11 +34,11 @@ Entregar uma solução correta, testável e com boa experiência de monitorament
 - API REST (Spring Boot) para criar atendimentos, finalizar atendimentos, listar filas e atendentes.
 - Motor de distribuição automática com fila modelada em banco relacional e RabbitMQ como gatilho assíncrono.
 - Snapshot REST do dashboard em `GET /api/dashboard/resumo`.
+- Stream SSE do dashboard em `GET /api/dashboard/stream`.
 - Swagger/OpenAPI em `/swagger-ui.html` e `/api-docs`.
 - Testes automatizados cobrindo a regra de negócio (limite de 3, fila, concorrência).
 
 ### Planejado nas próximas fases
-- Endpoint SSE (`/api/dashboard/stream`) que emite eventos em tempo real.
 - Dashboard React consumindo snapshot REST + stream SSE.
 
 ### Fora do escopo
@@ -87,11 +87,11 @@ O scheduler de segurança reprocessa periodicamente os times para cobrir mensage
 
 ## 6. Dashboard e Observabilidade
 
-**Endpoint implementado:** `GET /api/dashboard/resumo`
+**Endpoints implementados:** `GET /api/dashboard/resumo` e `GET /api/dashboard/stream`
 
-- Retorna filas por time, atendimentos em andamento por time, finalizados hoje, tempo médio de espera e ocupação dos atendentes.
-- Deve ser usado como snapshot inicial do dashboard.
-- SSE está planejado para a Fase 4 em `GET /api/dashboard/stream`.
+- `GET /api/dashboard/resumo` retorna filas por time, atendimentos em andamento por time, finalizados hoje, tempo médio de espera e ocupação dos atendentes.
+- `GET /api/dashboard/stream` mantém conexão SSE aberta e envia eventos `atendimento-criado`, `atendimento-atribuido` e `atendimento-finalizado`.
+- O snapshot deve ser usado na carga inicial e após reconexões SSE.
 
 **Documentação da API:** `GET /swagger-ui.html` e `GET /api-docs`.
 
@@ -121,5 +121,5 @@ Ver `phases.md` para o detalhamento com entregáveis por fase.
 - [ ] Scheduler reprocessa filas pendentes mesmo se uma mensagem for perdida.
 - [x] API documentada (OpenAPI/Swagger).
 - [x] Testes cobrindo a regra de negócio, incluindo cenário de concorrência.
-- [ ] Dashboard reflete mudanças de estado via SSE, sem polling e sem F5 manual.
+- [x] Dashboard backend reflete mudanças de estado via SSE, sem polling.
 - [ ] Ambiente completo com frontend e orquestração padronizada.

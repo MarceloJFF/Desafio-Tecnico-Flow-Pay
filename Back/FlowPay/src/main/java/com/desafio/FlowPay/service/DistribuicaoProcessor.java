@@ -17,10 +17,13 @@ public class DistribuicaoProcessor {
 
 	private final AtendimentoRepository atendimentoRepository;
 	private final AtendenteRepository atendenteRepository;
+	private final DashboardEventPublisher dashboardEventPublisher;
 
-	public DistribuicaoProcessor(AtendimentoRepository atendimentoRepository, AtendenteRepository atendenteRepository) {
+	public DistribuicaoProcessor(AtendimentoRepository atendimentoRepository, AtendenteRepository atendenteRepository,
+			DashboardEventPublisher dashboardEventPublisher) {
 		this.atendimentoRepository = atendimentoRepository;
 		this.atendenteRepository = atendenteRepository;
+		this.dashboardEventPublisher = dashboardEventPublisher;
 	}
 
 	@Transactional
@@ -44,6 +47,7 @@ public class DistribuicaoProcessor {
 		proximo.setStatus(StatusAtendimento.EM_ATENDIMENTO);
 		proximo.setAtribuidoEm(LocalDateTime.now());
 		atendente.setAtendimentosAtivos(atendente.getAtendimentosAtivos() + 1);
+		dashboardEventPublisher.atendimentoAtribuido(proximo.getId(), proximo.getTime(), atendente.getId());
 		return true;
 	}
 }

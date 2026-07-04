@@ -36,14 +36,13 @@ Front/src/                       # planejado
 
 ## 2. `DashboardPage.tsx` — Página Principal
 
-**Responsabilidade:** orquestrar o carregamento inicial via snapshot REST e, quando a Fase 4 for implementada, assinatura do stream SSE.
+**Responsabilidade:** orquestrar o carregamento inicial via snapshot REST e assinatura do stream SSE.
 
 **Fluxo:**
 1. Ao montar, chama `useDashboardSnapshot()` → `GET /api/dashboard/resumo` para estado inicial.
-2. Fase atual: renderiza a tela com o snapshot retornado.
-3. Fase planejada: em paralelo, `useDashboardStream()` abre `EventSource` em `/api/dashboard/stream`.
-4. Fase planejada: cada evento recebido atualiza o estado local (merge incremental, não re-fetch completo).
-5. Fase planejada: se a conexão SSE cair e reconectar, dispara novo snapshot REST para resincronizar.
+2. Em paralelo, `useDashboardStream()` abre `EventSource` em `/api/dashboard/stream`.
+3. Cada evento recebido atualiza o estado local (merge incremental, não re-fetch completo).
+4. Se a conexão SSE cair e reconectar, dispara novo snapshot REST para resincronizar.
 
 O backend processa distribuição de forma assíncrona via RabbitMQ. Portanto, um atendimento recém-criado pode aparecer brevemente como `AGUARDANDO` antes do worker atribuir para um atendente.
 
@@ -51,7 +50,7 @@ O backend processa distribuição de forma assíncrona via RabbitMQ. Portanto, u
 ```typescript
 {
   resumo: DashboardResumo | null;
-  conectado: boolean; // usado quando SSE estiver implementado
+  conectado: boolean;
   carregando: boolean;
   erro: string | null;
 }
@@ -149,7 +148,7 @@ interface ConexaoStatusIndicatorProps {
 }
 ```
 
-**Responsabilidade:** indicador visual do estado da conexão SSE quando a Fase 4 for implementada. Na fase atual, o dashboard depende de snapshot REST.
+**Responsabilidade:** indicador visual do estado da conexão SSE. O dashboard depende de snapshot REST para carga inicial e recuperação após reconexão.
 
 ---
 
@@ -167,7 +166,7 @@ function useDashboardStream(onEvent: (event: DashboardEvent) => void): {
 }
 ```
 
-**Responsabilidade planejada:** encapsular o ciclo de vida do `EventSource`, expor apenas o essencial (callback de evento + status de conexão) para a página consumir sem lidar com a API nativa diretamente.
+**Responsabilidade:** encapsular o ciclo de vida do `EventSource`, expor apenas o essencial (callback de evento + status de conexão) para a página consumir sem lidar com a API nativa diretamente.
 
 ---
 
@@ -183,13 +182,13 @@ function useDashboardSnapshot(): {
 }
 ```
 
-**Responsabilidade:** buscar `GET /api/dashboard/resumo` — usado no carregamento inicial. Quando SSE for implementado, também será usado após reconexão para resincronização.
+**Responsabilidade:** buscar `GET /api/dashboard/resumo` — usado no carregamento inicial e após reconexão SSE para resincronização.
 
 ---
 
 ## 10. Estratégia de Atualização de Estado (merge incremental)
 
-Quando SSE for implementado, ao invés de re-buscar o resumo inteiro a cada evento, o estado será atualizado de forma incremental no reducer da página:
+Ao invés de re-buscar o resumo inteiro a cada evento, o estado será atualizado de forma incremental no reducer da página:
 
 ```typescript
 function dashboardReducer(state: DashboardResumo, event: DashboardEvent): DashboardResumo {

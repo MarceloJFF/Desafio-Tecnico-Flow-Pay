@@ -200,6 +200,14 @@ public record DashboardResumoResponse(
     List<AtendenteStatusResponse> atendentes
 ) {}
 
+public record DashboardEventResponse(
+    String tipo,
+    UUID atendimentoId,
+    TimeAtendimento time,
+    UUID atendenteId,
+    LocalDateTime timestamp
+) {}
+
 public record ErroResponse(String erro) {}
 ```
 
@@ -216,6 +224,7 @@ public record ErroResponse(String erro) {}
 | `GET` | `/api/atendentes` | Lista atendentes com time e ocupação atual. |
 | `GET` | `/api/atendentes/{id}/atendimentos` | Lista todos os atendimentos de um atendente, incluindo finalizados. Aceita filtro opcional `status`. |
 | `GET` | `/api/dashboard/resumo` | Retorna métricas agregadas do dashboard. |
+| `GET` | `/api/dashboard/stream` | Stream SSE com eventos incrementais do dashboard. |
 
 Swagger UI:
 
@@ -340,6 +349,45 @@ Apesar do `record` implementar `Serializable`, a aplicação publica e consome a
 - `DistribuicaoProcessor` tenta atribuir um atendimento por chamada.
 - `DistribuicaoScheduler` roda periodicamente e tenta reprocessar um item por time.
 
+---
+
+## 7. SSE do Dashboard
+
+Endpoint:
+
+```text
+GET /api/dashboard/stream
+```
+
+Content-Type:
+
+```text
+text/event-stream
+```
+
+Eventos emitidos:
+
+| Evento | Quando ocorre |
+|---|---|
+| `dashboard-conectado` | Quando um cliente abre conexão SSE. |
+| `atendimento-criado` | Após commit da criação de atendimento. |
+| `atendimento-atribuido` | Após commit da atribuição feita pelo worker/scheduler. |
+| `atendimento-finalizado` | Após commit da finalização. |
+
+Payload dos eventos de negócio:
+
+```typescript
+interface DashboardEvent {
+  tipo: "atendimento-criado" | "atendimento-atribuido" | "atendimento-finalizado";
+  atendimentoId: string;
+  time: TimeAtendimento;
+  atendenteId?: string;
+  timestamp: string;
+}
+```
+
+O backend mantém uma lista thread-safe de `SseEmitter` ativos e remove conexões em completion, timeout, erro ou falha de envio.
+
 Configurações relevantes:
 
 ```properties
@@ -350,7 +398,7 @@ flowpay.distribuicao.scheduler-delay-ms=5000
 
 ---
 
-## 7. Schema SQL de Referência
+## 8. Schema SQL de Referência
 
 ```sql
 CREATE TABLE atendentes (
@@ -391,7 +439,7 @@ CREATE INDEX idx_atendentes_time_carga ON atendentes (time, atendimentos_ativos)
 
 ---
 
-## 8. Tipos TypeScript
+## 9. Tipos TypeScript
 
 ```typescript
 export type TimeAtendimento = "CARTOES" | "EMPRESTIMOS" | "OUTROS";
@@ -435,6 +483,14 @@ export interface DashboardResumo {
   finalizadosHoje: number;
   tempoMedioEsperaSegundos: number;
   atendentes: AtendenteStatus[];
+}
+
+export interface DashboardEvent {
+  tipo: "atendimento-criado" | "atendimento-atribuido" | "atendimento-finalizado";
+  atendimentoId: string;
+  time: TimeAtendimento;
+  atendenteId?: string;
+  timestamp: string;
 }
 
 export interface ErroResponse {
