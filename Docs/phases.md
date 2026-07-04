@@ -81,13 +81,15 @@ Divisão pensada para caber no prazo do desafio (48h), com cada fase gerando alg
 
 ## Fase 5 — Frontend: Dashboard React
 
-**Objetivo:** interface de monitoramento consumindo REST + SSE.
+**Objetivo:** interface de monitoramento consumindo REST + SSE. **Implementado em `Front/`.**
 
 - Estrutura de componentes conforme `design.md`.
 - `useDashboardSnapshot` (carga inicial) + `useDashboardStream` (atualizações via `EventSource`).
 - Reducer de merge incremental de eventos.
 - Indicador de status de conexão.
-- Estilização básica, mas clara (não precisa ser um design system completo).
+- Formulário para criar atendimento.
+- Listagem e finalização de atendimentos.
+- Estilização responsiva para desktop e mobile.
 
 **Entregável:** dashboard funcional, atualizando sozinho ao criar/finalizar atendimentos em outra aba/terminal, telas de listagem de atendimentos e atendentes, e outros endpoints.
 

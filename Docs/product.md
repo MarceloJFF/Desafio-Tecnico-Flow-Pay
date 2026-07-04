@@ -51,6 +51,10 @@ Sistema que recebe solicitações de atendimento, distribui automaticamente para
 - Endpoint SSE para stream de eventos em tempo real.
 - Swagger/OpenAPI para testar a API pela web.
 
+### 7. Frontend React
+- Dashboard em `Front/` consumindo o snapshot REST e o stream SSE.
+- Tela permite criar atendimento, acompanhar filas, ver ocupacao dos atendentes e finalizar atendimentos em andamento.
+
 ---
 
 ## Fora do Escopo (nesta versão)

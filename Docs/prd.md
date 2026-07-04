@@ -1,7 +1,7 @@
 # PRD — Software de Distribuição e Monitoramento de Atendimentos (FlowPay)
 
 **Versão:** 2.0
-**Stack:** Monorepo — React (front planejado) + Spring Boot (back) + Postgres + RabbitMQ + SSE + Swagger/OpenAPI
+**Stack:** Monorepo — React + Spring Boot + Postgres + RabbitMQ + SSE + Swagger/OpenAPI
 **Autor:** Marcelo (desafio técnico Pleno Full Stack)
 
 ---
@@ -35,11 +35,12 @@ Entregar uma solução correta, testável e com boa experiência de monitorament
 - Motor de distribuição automática com fila modelada em banco relacional e RabbitMQ como gatilho assíncrono.
 - Snapshot REST do dashboard em `GET /api/dashboard/resumo`.
 - Stream SSE do dashboard em `GET /api/dashboard/stream`.
+- Frontend React em `Front/` consumindo REST + SSE.
 - Swagger/OpenAPI em `/swagger-ui.html` e `/api-docs`.
 - Testes automatizados cobrindo a regra de negócio (limite de 3, fila, concorrência).
 
 ### Planejado nas próximas fases
-- Dashboard React consumindo snapshot REST + stream SSE.
+- Polimento de entrega, README geral e padronizacao de ambiente.
 
 ### Fora do escopo
 - Autenticação/autorização.
@@ -122,4 +123,5 @@ Ver `phases.md` para o detalhamento com entregáveis por fase.
 - [x] API documentada (OpenAPI/Swagger).
 - [x] Testes cobrindo a regra de negócio, incluindo cenário de concorrência.
 - [x] Dashboard backend reflete mudanças de estado via SSE, sem polling.
+- [x] Frontend React consome snapshot REST e stream SSE.
 - [ ] Ambiente completo com frontend e orquestração padronizada.

@@ -1,8 +1,17 @@
 HELP.md
+
+### Java / Maven ###
 target/
 .mvn/wrapper/maven-wrapper.jar
 !**/src/main/**/target/
 !**/src/test/**/target/
+
+### Frontend ###
+node_modules/
+dist/
+.vite/
+*.local
+*.tsbuildinfo
 
 ### STS ###
 .apt_generated
@@ -22,7 +31,6 @@ target/
 ### NetBeans ###
 /nbproject/private/
 /nbbuild/
-/dist/
 /nbdist/
 /.nb-gradle/
 build/

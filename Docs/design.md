@@ -9,13 +9,15 @@ Documento de design de componentes do Dashboard FlowPay. Foco em estrutura, resp
 Uma única página principal (`/dashboard`), sem necessidade de roteamento complexo nesta versão:
 
 ```
-Front/src/                       # planejado
+Front/src/
 ├── pages/
 │   └── DashboardPage.tsx
 ├── components/
 │   ├── layout/
 │   │   └── AppHeader.tsx
 │   ├── dashboard/
+│   │   ├── AtendimentoForm.tsx
+│   │   ├── AtendimentosPanel.tsx
 │   │   ├── ResumoPorTimeCard.tsx
 │   │   ├── FilaPorTimeTable.tsx
 │   │   ├── AtendentesGrid.tsx
